@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sliding Number Puzzle Chess</title>
+  <link rel="stylesheet" href="chess.css" />
+</head>
+<body>
+  <header class="page-header">
+    <a href="https://xkcd.com/3139/" target="_blank" rel="noopener noreferrer">
+      <h1>Sliding Number Puzzle Chess</h1>
+    </a>
+  </header>
+
+  <div class="app">
+    <div class="left-col">
+      <!-- Phase display container above board -->
+      <div class="phase-display-above">
+        <div id="phase-above" class="pill">Loading…</div>
+      </div>
+
+      <!-- Game area with captured pieces and board -->
+      <div class="game-area">
+        <!-- Black captured pieces (left side, aligned with board top) -->
+        <div class="captured-black" id="captured-black">
+          <div class="captured-pill"></div>
+        </div>
+
+        <!-- Game board container -->
+             <div class="board-section">
+               <div class="board-container">
+                 <div class="board-wrap">
+                   <canvas id="board" width="800" height="800"></canvas>
+                   <svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+                   <!-- Gap hover overlay -->
+                   <div id="gap-overlay" class="gap-overlay"></div>
+                 </div>
+               </div>
+             </div>
+
+        <!-- White captured pieces (right side, aligned with board bottom) -->
+        <div class="captured-white" id="captured-white">
+          <div class="captured-pill"></div>
+        </div>
+      </div>
+
+      <!-- Phase display container below board -->
+      <div class="phase-display-below">
+        <div id="phase-below" class="pill">Loading…</div>
+      </div>
+
+      <div class="moves" id="movesBox">
+        <div class="moves-header">
+          <h3>Game Moves</h3>
+          <div class="moves-buttons">
+            <button id="copyLog" class="btn">Copy</button>
+            <button id="reset" class="btn">Reset</button>
+          </div>
+        </div>
+        <div id="movesContainer">
+          <table id="movesTable" class="moves-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>White</th>
+                <th>Black</th>
+              </tr>
+            </thead>
+            <tbody id="movesTableBody"></tbody>
+          </table>
+          <pre id="movesText" style="display: none;"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Promotion dialog -->
+  <div class="promo" id="promo" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:20;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:14px; border-radius:14px; width:min(460px,92vw);">
+      <h3 id="promoTitle" style="margin:0 0 8px;">Promote pawn</h3>
+      <div id="promoBoardHint" style="font-size:12px; color:#9fb3d9; margin-bottom:8px;"></div>
+      <div class="choices" id="promoChoices" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;"></div>
+      <div class="tip" style="margin-top:10px;">If multiple pawns promote, you’ll choose for each one.</div>
+    </div>
+  </div>
+
+  <!-- Hand selection dialog -->
+  <div id="handSelectionDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:40;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:20px; border-radius:14px; width:min(480px,90vw); text-align:center;">
+      <h3 style="margin:0 0 16px; color:#eef2ff;">Choose a Hand</h3>
+      <div class="row" style="gap:16px; justify-content:center;">
+        <button id="leftHandBtn" class="btn" style="min-width:120px;">Left Hand</button>
+        <button id="rightHandBtn" class="btn" style="min-width:120px;">Right Hand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gap result dialog -->
+  <div id="gapResultDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:40;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:20px; border-radius:14px; width:min(480px,90vw); text-align:center;">
+      <div id="gapResultPawn" style="font-size:48px; margin:10px 0;"></div>
+      <h3 style="margin:10px 0 16px; color:#eef2ff;">Gap Position</h3>
+      <p id="gapResultMessage" style="font-size:16px; color:#cbd5e0; margin-bottom:20px;"></p>
+      <div class="row" style="justify-content:center;">
+        <button id="confirmGapBtn" class="btn" style="min-width:120px;">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Draw dialog -->
+  <div id="drawDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:30;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:14px; border-radius:14px; width:min(520px,92vw);">
+      <h3 style="margin:0 0 8px;">Draw</h3>
+      <div id="drawReasons" style="font-size:14px; color:#cbd5e0; margin-bottom:12px;"></div>
+      <div class="row" style="justify-content:center;">
+        <button id="confirmDraw" class="btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Illegal Slide dialog -->
+  <div id="illegalSlideDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:30;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:14px; border-radius:14px; width:min(520px,92vw);">
+      <h3 style="margin:0 0 8px;">Illegal Slide</h3>
+      <div id="illegalSlideReason" style="font-size:14px; color:#cbd5e0; margin-bottom:12px;"></div>
+      <div class="row">
+        <button id="closeIllegalSlide" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win dialog -->
+  <div id="winDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:30;">
+    <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:14px; border-radius:14px; width:min(520px,92vw);">
+      <h3 id="winMessage" style="margin:0 0 8px;"></h3>
+      <div class="row">
+        <button id="closeWin" class="btn">Close</button>
+        <button id="resetWin" class="btn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

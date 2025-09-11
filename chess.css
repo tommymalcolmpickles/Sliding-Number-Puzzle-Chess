@@ -1,0 +1,668 @@
+/* ===== CSS Variables ===== */
+:root {
+    --light: #f0d9b5;
+    --dark: #b58863;
+    --gap: #20232a;
+    --grid: #222;
+    --accent: #63b3ed;
+    --danger: #e53e3e;
+    --ui: #0f1220;
+    --uiText: #eef2ff;
+    --uiBorder: #2a2f45;
+    --muted: #93a4bf;
+    --status-bg: #12152a;
+    --status-border: #222845;
+    --moves-bg: #0b0e1a;
+    --button-bg: #151a2b;
+    --ui-secondary: #cbd5e0;
+    --shadow-primary: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --shadow-secondary: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  
+  /* ===== Global Styles ===== */
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #0b0c0f;
+    color: var(--uiText);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  /* ===== Layout ===== */
+  .app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* ===== Left Column ===== */
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+  }
+  
+  /* ===== Header ===== */
+  .page-header {
+    text-align: center;
+    margin: 12px 0 8px 0;
+    padding: 0 8px;
+  }
+
+  .page-header a {
+    display: inline-block;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .page-header h1 {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--status-bg);
+    border: 1px solid var(--status-border);
+    color: var(--uiText);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .page-header a:hover h1 {
+    background: var(--ui);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* ===== Phase Display ===== */
+  .phase-display-above,
+  .phase-display-below {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-height: 30px; /* Proper height for the pill when visible */
+    margin-bottom: 8px;
+  }
+
+  .phase-display-below {
+    margin-bottom: 12px;
+    margin-top: 8px;
+  }
+
+  /* Initially hide both phase indicators */
+  #phase-above,
+  #phase-below {
+    display: none;
+  }
+
+  /* Show appropriate phase indicator based on turn */
+  #phase-above.active,
+  #phase-below.active {
+    display: inline-flex;
+  }
+
+  /* ===== Game Area ===== */
+  .game-area {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: end; /* Align all items to bottom by default */
+    gap: 1rem;
+    justify-content: center;
+    width: 100%;
+    max-width: 900px; /* Constrain to keep captured pieces close to board */
+  }
+
+  /* Keep black's captured pieces aligned with board top */
+  .captured-black {
+    align-self: start; /* Align to top of grid */
+    justify-self: end; /* Align to right within its grid cell */
+  }
+
+  /* Keep white's captured pieces aligned with board bottom */
+  .captured-white {
+    align-self: end; /* Align to bottom of grid */
+    justify-self: start; /* Align to left within its grid cell */
+  }
+
+  .board-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .board-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ===== Captured Pieces ===== */
+  .captured-black,
+  .captured-white {
+    visibility: hidden; /* Invisible by default, shown when pieces are captured */
+  }
+
+  .captured-black {
+    justify-content: flex-end;
+    align-items: flex-start; /* Content at top of container */
+    align-self: start; /* Ensure alignment with board top */
+    justify-self: end; /* Ensure horizontal positioning */
+  }
+
+  .captured-white {
+    justify-content: flex-start;
+    align-items: flex-end; /* Content at bottom of container */
+    align-self: end; /* Ensure alignment with board bottom */
+    justify-self: start; /* Ensure horizontal positioning */
+  }
+
+  .captured-pill {
+    display: inline-block;
+    width: 60px; /* Fixed width as requested */
+    min-height: 28px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--status-border);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: monospace;
+    line-height: 1.2;
+    text-align: center; /* Center the pill contents */
+    box-sizing: border-box;
+  }
+
+  .glyph-content {
+    white-space: pre-line;
+    word-break: break-all;
+  }
+
+  /* Black captured pieces (white pieces) - left side */
+  .captured-black .captured-pill {
+    background: var(--dark); /* Same as dark squares */
+    color: white; /* White text on dark background */
+  }
+
+  .captured-black .glyph-content {
+    text-align: right; /* Right align glyph content for black's box */
+  }
+
+  /* White captured pieces (black pieces) - right side */
+  .captured-white .captured-pill {
+    background: var(--light); /* Same as light squares */
+    color: black; /* Black text on light background */
+  }
+
+  .captured-white .glyph-content {
+    text-align: left; /* Left align glyph content for white's box */
+  }
+
+
+  /* ===== Chess Board ===== */
+  .board-wrap {
+    position: relative;
+    aspect-ratio: 1/1;
+    background: #000;
+    overflow: hidden;
+    box-shadow: var(--shadow-primary);
+    width: min(100%, calc(65vh - 100px));
+    max-width: 800px;
+    min-width: 300px;
+  }
+  
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  
+  svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Gap overlay for hover effects */
+  .gap-overlay {
+    position: absolute;
+    pointer-events: auto;
+    transition: background-color 0.2s ease;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 10;
+    background-color: transparent;
+  }
+
+  .gap-overlay.active {
+    background-color: rgba(99, 179, 237, 0.4);
+  }
+
+  /* Black pawn glyph styling */
+  .black-pawn-glyph {
+    color: black;
+    text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white;
+    -webkit-text-stroke: 1px white;
+  }
+
+  /* Modal dialog styling */
+  #handSelectionDlg,
+  #gapResultDlg {
+    backdrop-filter: blur(2px);
+  }
+
+  #handSelectionDlg .card,
+  #gapResultDlg .card {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 2px solid #63b3ed;
+  }
+
+  /* Disable board interaction during modal dialogs */
+  .board-modal-disabled {
+    pointer-events: none !important;
+    opacity: 0.7;
+  }
+  
+  /* ===== Status Bar ===== */
+  .statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  /* ===== Moves Table ===== */
+  .moves-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--uiText);
+  }
+
+  .moves-table th {
+    background: var(--ui);
+    color: var(--ui-secondary);
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid var(--status-border);
+    font-weight: 600;
+  }
+
+  .moves-table td {
+    padding: 6px 12px;
+    border: 1px solid var(--status-border);
+    text-align: center;
+  }
+
+  .moves-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .moves-table .empty-cell {
+    background: transparent;
+    border: none;
+  }
+  
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--status-bg);
+    border: 1px solid var(--status-border);
+    color: var(--ui-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 160px;
+    justify-content: center;
+  }
+  
+  /* ===== Moves Panel ===== */
+  .moves {
+    background: var(--moves-bg);
+    border: 1px solid var(--uiBorder);
+    border-radius: 12px;
+    padding: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    width: min(100%, calc(65vh - 100px));
+    max-width: 800px;
+    min-width: 300px;
+    position: relative;
+  }
+  
+  .moves-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--uiBorder);
+  }
+
+  .moves-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .moves-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .moves pre {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
+  .moves .row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  
+  /* ===== HUD Panel ===== */
+  .hud {
+    background: var(--ui);
+    border: 1px solid var(--uiBorder);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: var(--shadow-secondary);
+  }
+  
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .row + .row {
+    margin-top: 8px;
+  }
+  
+  .btn {
+    appearance: none;
+    background: var(--button-bg);
+    color: var(--uiText);
+    border: 1px solid var(--uiBorder);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .btn:hover:not([disabled]) {
+    background: var(--uiBorder);
+    border-color: var(--accent);
+  }
+  
+  .btn:active:not([disabled]) {
+    transform: translateY(1px);
+  }
+  
+  .btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .legend {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  
+  .sections {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  
+  .sectionTag {
+    text-align: center;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: var(--status-bg);
+    border: 1px dashed var(--status-border);
+    color: #a0aec0;
+    font-size: 12px;
+  }
+  
+  .tip {
+    font-size: 12px;
+    color: #90cdf4;
+  }
+  
+  /* ===== Dialogs ===== */
+  .promo,
+  #drawDlg,
+  #illegalSlideDlg,
+  #winDlg {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 20;
+  }
+  
+  #drawDlg,
+  #illegalSlideDlg,
+  #winDlg {
+    z-index: 30;
+  }
+  
+  .card {
+    background: var(--ui);
+    border: 1px solid var(--uiBorder);
+    padding: 14px;
+    border-radius: 14px;
+    width: min(460px, 92vw);
+  }
+  
+  #drawDlg .card,
+  #illegalSlideDlg .card,
+  #winDlg .card {
+    width: min(520px, 92vw);
+  }
+  
+  .card h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+  
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  
+  #promoBoardHint {
+    font-size: 12px;
+    color: #9fb3d9;
+    margin-bottom: 8px;
+  }
+  
+  /* ===== Responsive Design ===== */
+  @media (max-width: 768px) {
+    .app {
+      gap: 8px;
+      padding: 8px;
+    }
+    .game-area {
+      gap: 0.75rem;
+      max-width: 850px;
+    }
+    .board-wrap {
+      order: -1;
+      width: min(100%, calc(60vh - 80px));
+      max-width: none;
+    }
+  .captured-black,
+  .captured-white {
+    min-height: min(100%, calc(60vh - 80px));
+  }
+
+  /* Ensure proper alignment on tablets */
+  .captured-black {
+    align-self: start !important;
+    justify-self: end !important;
+  }
+
+  .captured-white {
+    align-self: end !important;
+    justify-self: start !important;
+  }
+  .captured-white, .captured-black{
+    display: flex;
+  }
+    .moves {
+      width: min(100%, calc(60vh - 80px));
+      max-width: none;
+    }
+    .phase-display-above,
+    .phase-display-below {
+      min-height: 40px;
+    }
+    .left-col {
+      max-width: 100%;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .app {
+      padding: 6px;
+      gap: 6px;
+    }
+    .game-area {
+      gap: 0.5rem;
+      max-width: 800px;
+    }
+    .board-wrap {
+      width: min(100%, calc(55vh - 60px));
+      min-width: 250px;
+    }
+  .captured-black,
+  .captured-white {
+    min-height: min(100%, calc(55vh - 60px));
+  }
+
+  /* Ensure proper alignment on mobile */
+  .captured-black {
+    align-self: start !important;
+    justify-self: end !important;
+  }
+
+  .captured-white {
+    align-self: end !important;
+    justify-self: start !important;
+  }
+    .captured-pill {
+      width: 60px; /* Consistent width as requested */
+      font-size: 12px;
+      padding: 6px 8px;
+      min-height: 24px;
+    }
+
+    .captured-black .captured-pill {
+      background: var(--dark);
+      color: white;
+    }
+
+    .captured-black .glyph-content {
+      text-align: right;
+    }
+
+    .captured-white .captured-pill {
+      background: var(--light);
+      color: black;
+    }
+
+    .captured-white .glyph-content {
+      text-align: left;
+    }
+    .moves {
+      width: min(100%, calc(55vh - 60px));
+      min-width: 250px;
+    }
+    .phase-display-above,
+    .phase-display-below {
+      min-height: 36px;
+    }
+    .moves-header h3 {
+      font-size: 14px;
+    }
+    .moves pre {
+      font-size: 14px;
+    }
+    .moves-buttons .btn {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .statusbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .pill {
+      justify-content: center;
+      min-width: 80px;
+      font-size: 11px;
+      padding: 3px 6px;
+    }
+    .moves .row {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .board-wrap {
+      width: min(calc(65vh - 100px), 700px);
+    }
+  .captured-black,
+  .captured-white {
+    min-height: min(calc(65vh - 100px), 700px);
+  }
+
+  /* Ensure proper alignment on large screens */
+  .captured-black {
+    align-self: start !important;
+    justify-self: end !important;
+  }
+
+  .captured-white {
+    align-self: end !important;
+    justify-self: start !important;
+  }
+    .moves {
+      width: min(calc(65vh - 100px), 700px);
+    }
+  }
+
+  #movesText {
+    white-space: pre; /* Preserve newlines */
+    font-family: monospace; /* Optional: improve readability */
+  }
+  .whiteGlyph {
+    fill: white;
+    font-weight: bold;
+  }
+
+.blackGlyph {
+  fill: black;
+}
