@@ -162,28 +162,6 @@ export default class MoveGenerator {
     }
   }
 
-  canCastle(from, to) {
-    const p = this.game.board.pieceAt(from);
-    if (!p || p.t !== 'k' || p.moved) return false;
-    const dir = (to.c > from.c) ? 1 : -1;
-    const rookCol = from.c + (dir === 1 ? 3 : -4);
-    if (!inBounds(from.r, rookCol)) return false;
-    const rook = this.game.board.pieceAt({ r: from.r, c: rookCol });
-    if (!rook || rook.t !== 'r' || rook.c !== p.c || rook.moved) return false;
-    let c = from.c + dir;
-    while (c !== rookCol) {
-      if (this.game.board.isGapSquare(from.r, c)) return false;
-      if (this.game.board.pieceAt({ r: from.r, c })) return false;
-      c += dir;
-    }
-    const steps = [1, 2];
-    for (const step of steps) {
-      const checkC = from.c + step * dir;
-      if (this.game.board.isGapSquare(from.r, checkC)) return false;
-      if (this.squareAttacked({ r: from.r, c: checkC }, opponent(p.c))) return false;
-    }
-    return true;
-  }
 
 
   moveIsLegal(from, to) {
@@ -284,31 +262,22 @@ export default class MoveGenerator {
     // For checkmate detection, we need to check if the player has ANY legal moves
     // in ANY mode, because they can switch modes during their turn
 
-    console.log(`hasAnyLegalMove(${color}): Checking for legal moves...`);
-
     // Check for legal piece moves (available in move mode)
-    let pieceMovesCount = 0;
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       const p = this.game.board.pieceAt({ r, c });
       if (!p || p.c !== color) continue;
       const moves = this.legalMoves({ r, c });
-      pieceMovesCount += moves.length;
       if (moves.length > 0) {
-        console.log(`hasAnyLegalMove(${color}): Found piece moves for ${p.t} at ${r},${c}: ${moves.length} moves`);
         return true;
       }
     }
-    console.log(`hasAnyLegalMove(${color}): No piece moves found (checked ${pieceMovesCount} total moves)`);
 
     // Check for legal slide moves (available in slide mode)
-    const { legal, illegal } = this.legalSlideTargets();
-    console.log(`hasAnyLegalMove(${color}): Legal slides: ${legal.length}, Illegal slides: ${illegal.length}`);
+    const { legal } = this.legalSlideTargets();
     if (legal.length > 0) {
-      console.log(`hasAnyLegalMove(${color}): Found legal slide moves`);
       return true;
     }
 
-    console.log(`hasAnyLegalMove(${color}): No legal moves found`);
     return false;
   }
 

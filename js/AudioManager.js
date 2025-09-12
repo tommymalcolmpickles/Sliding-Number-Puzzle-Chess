@@ -36,9 +36,7 @@ export default class AudioManager {
       ]);
 
       this.isInitialized = true;
-      console.log('AudioManager initialized successfully');
     } catch (error) {
-      console.warn('Failed to initialize AudioManager:', error);
       this.isInitialized = false;
     }
   }
@@ -49,7 +47,6 @@ export default class AudioManager {
     }
 
     if (!this.isInitialized || !this.audioContext || !this.tapBuffer) {
-      console.warn('AudioManager not ready to play sound');
       return;
     }
 
@@ -70,11 +67,10 @@ export default class AudioManager {
           source.connect(this.audioContext.destination);
           source.start(0);
         } catch (playError) {
-          console.warn('Failed to play tap sound:', playError);
+          // Failed to play tap sound
         }
       }, delay);
     } catch (error) {
-      console.warn('Failed to initialize audio playback:', error);
       // Try to reinitialize on next play attempt
       this.isInitialized = false;
     }
@@ -86,7 +82,6 @@ export default class AudioManager {
     }
 
     if (!this.isInitialized || !this.audioContext || !this.slideBuffer) {
-      console.warn('AudioManager not ready to play slide sound');
       return;
     }
 
@@ -107,24 +102,13 @@ export default class AudioManager {
           source.connect(this.audioContext.destination);
           source.start(0);
         } catch (playError) {
-          console.warn('Failed to play slide sound:', playError);
+          // Failed to play slide sound
         }
       }, delay);
     } catch (error) {
-      console.warn('Failed to initialize audio playback:', error);
       // Try to reinitialize on next play attempt
       this.isInitialized = false;
     }
   }
 
-  // Cleanup method if needed
-  dispose() {
-    if (this.audioContext && this.audioContext.state !== 'closed') {
-      this.audioContext.close();
-    }
-    this.audioContext = null;
-    this.tapBuffer = null;
-    this.slideBuffer = null;
-    this.isInitialized = false;
-  }
 }

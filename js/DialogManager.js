@@ -45,8 +45,6 @@ export default class DialogManager {
           document.removeEventListener('keydown', this.howToPlayDlg._closeOnEscape);
         }
       });
-    } else {
-      console.warn('closeHowToPlay element not found in DOM');
     }
   }
 
@@ -129,30 +127,9 @@ export default class DialogManager {
       // Store the event listeners to remove them when dialog closes
       this.howToPlayDlg._closeOnOutsideClick = closeOnOutsideClick;
       this.howToPlayDlg._closeOnEscape = closeOnEscape;
-    } else {
-      console.warn('howToPlayDlg element not found in DOM');
     }
   }
 
-  onClaimDraw() {
-    const repetitionCounts = [...this.game.repetitionManager.repetitionCounts.entries()].filter(([, v]) => v >= 3);
-    if (!repetitionCounts.length) return;
-    const maxOccurrences = repetitionCounts.length > 0 ? Math.max(...repetitionCounts.map(([, v]) => v)) : 3;
-    const ruleName = maxOccurrences === 3 ? 'threefold' : maxOccurrences === 4 ? 'fourfold' : maxOccurrences === 5 ? 'fivefold' : `${maxOccurrences}-fold`;
-
-    // Only show positions that have reached the maximum repetition count
-    const maxRepetitionPositions = repetitionCounts.filter(([, v]) => v === maxOccurrences);
-
-    const lines = [`This game may be claimed drawn under the ${ruleName} repetition rule:`];
-    if (maxRepetitionPositions.length === 1) {
-      lines.push(`• This position has occurred ${maxOccurrences} times.`);
-    } else {
-      lines.push(`• ${maxRepetitionPositions.length} positions have each occurred ${maxOccurrences} times.`);
-    }
-
-    this.drawReasons.innerHTML = lines.map(x => `<div>${x}</div>`).join('');
-    this.drawDlg.style.display = 'flex';
-  }
 
   confirmClaimDraw() {
     const repetitionCounts = [...this.game.repetitionManager.repetitionCounts.entries()].filter(([, v]) => v >= 3).map(([, v]) => v);
@@ -211,26 +188,6 @@ export default class DialogManager {
     // No cancel button to reset since it was removed from the simplified dialog
   }
 
-  showDrawDialog() {
-    const repetitionCounts = [...this.game.repetitionManager.repetitionCounts.entries()].filter(([, v]) => v >= 3);
-    if (!repetitionCounts.length) return;
-
-    const maxOccurrences = repetitionCounts.length > 0 ? Math.max(...repetitionCounts.map(([, v]) => v)) : 3;
-    const ruleName = maxOccurrences === 3 ? 'threefold' : maxOccurrences === 4 ? 'fourfold' : maxOccurrences === 5 ? 'fivefold' : `${maxOccurrences}-fold`;
-
-    // Only show positions that have reached the maximum repetition count
-    const maxRepetitionPositions = repetitionCounts.filter(([, v]) => v === maxOccurrences);
-
-    const lines = [`This game may be drawn under the ${ruleName} repetition rule:`];
-    if (maxRepetitionPositions.length === 1) {
-      lines.push(`• This position has occurred ${maxOccurrences} times.`);
-    } else {
-      lines.push(`• ${maxRepetitionPositions.length} positions have each occurred ${maxOccurrences} times.`);
-    }
-
-    this.drawReasons.innerHTML = lines.map(x => `<div>${x}</div>`).join('');
-    this.drawDlg.style.display = 'flex';
-  }
 
   showStalemateDialog() {
     this.drawReasons.innerHTML = '<div>Stalemate!</div><div>The game is a draw because the player to move has no legal moves but is not in check.</div>';

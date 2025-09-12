@@ -11,7 +11,6 @@ export const RANKS = '87654321';
 
 export function clone(o, depth = 0, maxDepth = 50) {
   if (depth > maxDepth) {
-    console.warn('Max clone depth reached');
     return o;
   }
   if (o === null || o === undefined) return o;

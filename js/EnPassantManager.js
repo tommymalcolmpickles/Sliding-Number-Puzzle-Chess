@@ -10,18 +10,11 @@ export default class EnPassantManager {
     return this.target;
   }
 
-  setTarget(pos) {
-    this.target = pos ? { ...pos } : null;
-  }
 
   clearTarget() {
     this.target = null;
   }
 
-  isValidTarget(pos) {
-    if (!this.target) return false;
-    return this.target.r === pos.r && this.target.c === pos.c;
-  }
 
   // Check if en passant is possible at a given position
   canCaptureAt(to, color) {

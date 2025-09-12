@@ -41,7 +41,6 @@ function startGame() {
   };
 
   if (!elements.canvas || !elements.overlay) {
-    console.error(STRINGS.ERROR_REQUIRED_DOM_ELEMENTS_MISSING);
     if (elements.phaseAbove) elements.phaseAbove.textContent = STRINGS.ERROR_REQUIRED_DOM_ELEMENTS_MISSING;
     return;
   }
@@ -53,8 +52,6 @@ function startGame() {
     howToPlayBtn.addEventListener('click', () => {
       game.dialogManager.showHowToPlayDialog();
     });
-  } else {
-    console.warn('howToPlayBtn element not found in DOM');
   }
 
   game.start();

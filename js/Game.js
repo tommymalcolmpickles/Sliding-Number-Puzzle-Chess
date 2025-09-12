@@ -81,7 +81,6 @@ export default class Game {
   }
 
   start() {
-    // Don't check for checkmate at the start - let players make their moves first
     this.notation.renderMoves();
     this.redraw();
 
@@ -94,11 +93,6 @@ export default class Game {
       }, 100);
     });
 
-    // Test checkmate detection
-    console.log("=== TESTING CHECKMATE DETECTION ===");
-    console.log(`Current player: ${this.toMove}`);
-    console.log(`hasAnyLegalMove(${this.toMove}): ${this.moveGenerator.hasAnyLegalMove(this.toMove)}`);
-    console.log(`isKingInCheck(${this.toMove}): ${this.moveGenerator.isKingInCheck(this.toMove)}`);
   }
 
   redraw() {
@@ -108,7 +102,6 @@ export default class Game {
   }
 
   updateCapturedPiecesDisplay() {
-    console.log('Updating captured pieces display:', this.capturedPieces);
 
     // Update black captured pieces (left side) - shows white pieces that black captured
     const blackCapturedContainer = this.elements.capturedBlack;
@@ -179,17 +172,6 @@ export default class Game {
     return result.join('\n');
   }
 
-  resetCapturedPieces() {
-    this.capturedPieces = { w: [], b: [] };
-    // Hide both containers when resetting
-    if (this.elements.capturedBlack) {
-      this.elements.capturedBlack.style.visibility = 'hidden';
-    }
-    if (this.elements.capturedWhite) {
-      this.elements.capturedWhite.style.visibility = 'hidden';
-    }
-    this.updateCapturedPiecesDisplay();
-  }
 
   finishTurnAfterMove() {
     this.repetitionManager.bumpRepetitionCounts();
@@ -271,23 +253,14 @@ export default class Game {
     const opp = opponent(side);
     const inCheck = this.moveGenerator.isKingInCheck(side);
 
-    console.log(`updateCheckFlags: side=${side}, opp=${opp}, inCheck=${inCheck}`);
-    console.log(`hasAnyLegalMove(${side})=${this.moveGenerator.hasAnyLegalMove(side)}`);
-    console.log(`hasAnyLegalMove(${opp})=${this.moveGenerator.hasAnyLegalMove(opp)}`);
-    console.log(`isKingInCheck(${opp})=${this.moveGenerator.isKingInCheck(opp)}`);
-
     if (!this.moveGenerator.hasAnyLegalMove(side)) {
-      console.log(`Player ${side} has no legal moves`);
       if (inCheck) {
-        console.log(`Checkmate! ${opp} wins`);
         this.winner = opp;
       } else {
-        console.log(`Stalemate!`);
         this.winner = null;
         this.draw = true;
       }
     } else if (!this.moveGenerator.hasAnyLegalMove(opp) && this.moveGenerator.isKingInCheck(opp)) {
-      console.log(`Player ${opp} has no legal moves and is in check - ${side} wins`);
       this.winner = side;
     }
   }
@@ -302,28 +275,25 @@ export default class Game {
     // Check for capture before making the move
     const capturedPiece = this.board.pieceAt(to);
     if (capturedPiece) {
-      console.log(STRINGS.LOG_CAPTURE_PIECE, capturedPiece, 'captured by:', p.c);
       // Clone the piece to avoid reference issues
       const pieceCopy = { ...capturedPiece };
       this.capturedPieces[p.c].push(pieceCopy);
-      console.log(STRINGS.LOG_CAPTURED_PIECES, this.capturedPieces);
       // Update immediately after adding the piece
       setTimeout(() => this.updateCapturedPiecesDisplay(), 0);
     }
 
-    // Always create pre-move board snapshot for notation (regardless of gap selection)
-    const preMoveBoardSnap = this.board.snapshot();
+    // Always create pre-move snapshots for notation and potential undo (regardless of gap selection)
+    const preMoveBoardSnap = this.board.snapshot(); // For notation system
+    const preMoveGameSnap = this.snapshot(); // For potential undo
 
     // Save history after the move is added to notation
     // This ensures the snapshot includes the move that was just made
     if (p.t === 'p' && to.c !== from.c && !this.board.pieceAt(to)) {
       const enPassantCapture = this.enPassantManager.handleCapture(to, p.c);
       if (enPassantCapture) {
-        console.log(STRINGS.LOG_EN_PASSANT_CAPTURE, enPassantCapture, 'captured by:', p.c);
         // Clone the piece to avoid reference issues
         const pieceCopy = { ...enPassantCapture };
         this.capturedPieces[p.c].push(pieceCopy);
-        console.log(STRINGS.LOG_CAPTURED_PIECES, this.capturedPieces);
         // Update immediately after adding the piece
         setTimeout(() => this.updateCapturedPiecesDisplay(), 0);
       }
@@ -363,7 +333,7 @@ export default class Game {
       }
 
       if (!rookFound) {
-        console.warn('Castling: Could not find rook to move');
+        // Could not find rook to move - this shouldn't happen in normal gameplay
       }
     } else {
       this.board.movePiece(from, to);
@@ -379,10 +349,22 @@ export default class Game {
       this.needPromos.push(...promos);
       this.promotionManager.askPromotionQueue(() => {
         if (this.moveGenerator.isKingInCheck(this.toMove)) {
+          // Invalid promotion - undo the move
+          this.restore(preMoveGameSnap, true); // true = skip redraw
+          this.redraw();
           return false;
         }
+        // Valid promotion - complete the turn
         this.enPassantManager.validateAndClearAfterTurn();
         this.notation.appendMove.bind(this.notation)(preMoveBoardSnap);
+
+        // Play move sound effect
+        this.audioManager.playTap();
+
+        // Check for draw by repetition after regular moves too
+        this.dialogManager.checkAndShowDrawDialog();
+
+        this.finishTurnAfterMove();
       });
       return true;
     }
@@ -428,7 +410,6 @@ export default class Game {
 
   restore(snap, skipRedraw = false) {
     if (!snap) {
-      console.warn('Game.restore: snap is undefined, resetting to initial state');
       this.toMove = 'w';
       this.mode = 'move';
       this.sel = null;

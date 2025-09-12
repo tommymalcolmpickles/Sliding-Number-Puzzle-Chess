@@ -51,7 +51,6 @@ export default class Notation {
 
   appendMove(preMoveBoardSnap) {
     if (!this.game) {
-      console.warn('Notation.appendMove: game is undefined');
       return;
     }
 
@@ -80,7 +79,6 @@ export default class Notation {
 
   appendSlide(slide, originalGap) {
     if (!this.game) {
-      console.warn('Notation.appendSlide: game is undefined');
       return;
     }
 
@@ -111,7 +109,6 @@ export default class Notation {
 
   moveToSAN(preMoveBoardSnap) {
     if (!this.game) {
-      console.warn('Notation.moveToSAN: game is undefined');
       return '';
     }
     const snap = this.game.snapshot();

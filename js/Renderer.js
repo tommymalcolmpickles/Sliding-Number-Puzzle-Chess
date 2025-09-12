@@ -68,7 +68,6 @@ export default class Renderer {
 
     // Set canvas size if it has changed
     if (this.canvas.width !== size || this.canvas.height !== size) {
-      console.log(`Resizing canvas from ${this.canvas.width}x${this.canvas.height} to ${size}x${size}`);
       this.canvas.width = size;
       this.canvas.height = size;
 
@@ -76,7 +75,6 @@ export default class Renderer {
       this.overlay.removeAttribute('width');
       this.overlay.removeAttribute('height');
       this.overlay.setAttribute('viewBox', `0 0 ${size} ${size}`);
-      console.log(`SVG viewBox set to: 0 0 ${size} ${size}`);
     }
   }
 
@@ -204,8 +202,6 @@ export default class Renderer {
   }
 
   drawPieces(game) {
-    console.log(`Drawing pieces with canvas size: ${this.canvas.width}x${this.canvas.height}`);
-
     // Clear elements based on current mode
     const children = Array.from(this.overlay.children);
     children.forEach(child => {
@@ -219,7 +215,6 @@ export default class Renderer {
     // Get canvas size for dynamic calculations
     const canvasSize = this.canvas.width;
     const dynamicSQ = canvasSize / N;
-    console.log(`Dynamic square size: ${dynamicSQ}`);
 
     for (let r = 0; r < N; r++) {
       for (let c = 0; c < N; c++) {
@@ -229,7 +224,6 @@ export default class Renderer {
         if (!p) continue;
         const x = c * dynamicSQ + dynamicSQ / 2;
         const y = r * dynamicSQ + dynamicSQ / 2;
-        console.log(`Creating piece ${GLYPH[p.c][p.t]} at (${x}, ${y})`);
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', x.toString());
@@ -360,8 +354,6 @@ export default class Renderer {
   }
 
   animateSlide(sr, sc, callback) {
-    console.log(`Animating slide of section (${sr}, ${sc})`);
-
     // Set sliding state
     this.game.isSliding = true;
 
@@ -376,8 +368,6 @@ export default class Renderer {
     // Calculate movement vector (from section position to gap position)
     const deltaX = (this.game.board.gap.sc - sc) * dynamicSectionSize;
     const deltaY = (this.game.board.gap.sr - sr) * dynamicSectionSize;
-
-    console.log(`Animation: moving section (${sr}, ${sc}) by (${deltaX}, ${deltaY})`);
 
     // Clear the original board squares in the sliding section to prevent overlap
     this.clearSectionOnCanvas(sr, sc);
@@ -462,8 +452,6 @@ export default class Renderer {
       }
     }
 
-    console.log(`Created ${animatedElements.length} animated elements (squares + pieces)`);
-
     // Start animation
     const startTime = Date.now();
 
@@ -486,7 +474,6 @@ export default class Renderer {
         requestAnimationFrame(animate);
       } else {
         // Animation complete
-        console.log('Slide animation completed');
 
         // Clear sliding state first
         this.game.isSliding = false;
@@ -513,7 +500,6 @@ export default class Renderer {
       requestAnimationFrame(animate);
     } else {
       // No pieces to animate, just call callback
-      console.log('No pieces to animate, skipping animation');
       this.game.isSliding = false;
       if (callback) {
         callback();
@@ -584,8 +570,6 @@ export default class Renderer {
 
     // Clear the section area on the canvas
     this.ctx.clearRect(sectionX, sectionY, dynamicSectionSize, dynamicSectionSize);
-
-    console.log(`Cleared canvas section (${sr}, ${sc}) at (${sectionX}, ${sectionY})`);
   }
 
   // Clear SVG pieces only in the specific section being animated
@@ -619,7 +603,6 @@ export default class Renderer {
         this.overlay.removeChild(child);
       }
     });
-    console.log(`Cleared SVG pieces only in section (${sr}, ${sc})`);
   }
 
   // Easing function for smooth animation

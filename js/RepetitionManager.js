@@ -76,7 +76,6 @@ export default class RepetitionManager {
 
   restore(snap) {
     if (!snap) {
-      console.warn('RepetitionManager.restore: snap is undefined, resetting counts');
       this.repetitionCounts = new Map();
       return;
     }

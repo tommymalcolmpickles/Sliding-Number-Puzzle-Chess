@@ -15,19 +15,20 @@ export default class PromotionManager {
     if (promos.length) {
       this.game.needPromos.push(...promos);
       this.askPromotionQueue(() => {
-        this.promotingSq = null;
         done();
       });
     } else done();
   }
 
   askPromotionQueue(done) {
-    const next = this.game.needPromos.shift();
+    const next = this.game.needPromos[0]; // Peek instead of shift
     if (!next) { done(); return; }
     this.promotingSq = { r: next.r, c: next.c };
     this.showPromotion(next.color, next.r, next.c, piece => {
       this.game.board.board[next.r][next.c] = { t: piece, c: next.color, moved: true };
       this.promotingSq = null;
+      // Now actually remove the processed promotion
+      this.game.needPromos.shift();
       this.askPromotionQueue(done);
     });
   }
