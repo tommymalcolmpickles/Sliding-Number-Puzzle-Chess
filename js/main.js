@@ -32,17 +32,31 @@ function startGame() {
     illegalSlideDlg: document.getElementById('illegalSlideDlg'),
     illegalSlideReason: document.getElementById('illegalSlideReason'),
     closeIllegalSlide: document.getElementById('closeIllegalSlide'),
+    howToPlayDlg: document.getElementById('howToPlayDlg'),
+    closeHowToPlay: document.getElementById('closeHowToPlay'),
     promo: document.getElementById('promo'),
     promoTitle: document.getElementById('promoTitle'),
     promoChoices: document.getElementById('promoChoices'),
     promoHint: document.getElementById('promoBoardHint'),
   };
+
   if (!elements.canvas || !elements.overlay) {
     console.error(STRINGS.ERROR_REQUIRED_DOM_ELEMENTS_MISSING);
     if (elements.phaseAbove) elements.phaseAbove.textContent = STRINGS.ERROR_REQUIRED_DOM_ELEMENTS_MISSING;
     return;
   }
   const game = new Game(elements);
+
+  // Set up How to Play button
+  const howToPlayBtn = document.getElementById('howToPlayBtn');
+  if (howToPlayBtn) {
+    howToPlayBtn.addEventListener('click', () => {
+      game.dialogManager.showHowToPlayDialog();
+    });
+  } else {
+    console.warn('howToPlayBtn element not found in DOM');
+  }
+
   game.start();
 }
 

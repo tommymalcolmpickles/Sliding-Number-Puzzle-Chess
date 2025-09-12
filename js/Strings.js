@@ -18,8 +18,8 @@ export const STRINGS = {
   DIALOG_HAND_SELECTION_TITLE: 'Choose a Hand',
   DIALOG_HAND_SELECTION_MESSAGE: 'Please choose a hand:',
   DIALOG_GAP_RESULT_TITLE: 'Gap Position',
-  DIALOG_GAP_RESULT_WHITE_MESSAGE: 'You chose the hand with the white pawn. This means the gap will start at section 11.',
-  DIALOG_GAP_RESULT_BLACK_MESSAGE: 'You chose the hand with the black pawn. This means the gap will start at section 7.',
+  DIALOG_GAP_RESULT_WHITE_MESSAGE: 'You chose the hand with the white pawn. The gap will start on white\'s side of the board (section 11).',
+  DIALOG_GAP_RESULT_BLACK_MESSAGE: 'You chose the hand with the black pawn. The gap will start on black\'s side of the board (section 7).',
   DIALOG_START_GAME_BUTTON: 'Start Game',
 
   // Error messages

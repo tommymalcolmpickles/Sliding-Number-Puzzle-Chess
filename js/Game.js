@@ -59,6 +59,8 @@ export default class Game {
       illegalSlideDlg: elements.illegalSlideDlg,
       illegalSlideReason: elements.illegalSlideReason,
       closeIllegalSlide: elements.closeIllegalSlide,
+      howToPlayDlg: elements.howToPlayDlg,
+      closeHowToPlay: elements.closeHowToPlay,
     });
     this.audioManager = new AudioManager();
     this.inputHandler = new InputHandler(this, {
@@ -312,13 +314,43 @@ export default class Game {
         setTimeout(() => this.updateCapturedPiecesDisplay(), 0);
       }
     }
-    if (p.t === 'k' && Math.abs(to.c - from.c) > 1 && from.r === to.r) {
+    if (p.t === 'k' && (Math.abs(to.c - from.c) > 1 || Math.abs(to.r - from.r) > 1)) {
+      // Castling (horizontal or vertical, short or long)
       this.board.movePiece(from, to);
-      const dir = (to.c > from.c) ? 1 : -1;
-      const rookCol = from.c + (dir > 0 ? 3 : -4);
-      const newRookCol = to.c - dir;
-      this.board.board[to.r][newRookCol] = { ...this.board.board[to.r][rookCol], moved: true };
-      this.board.board[to.r][rookCol] = null;
+
+      // Calculate direction and distance
+      let dr = 0, dc = 0;
+      if (Math.abs(to.c - from.c) > 1) {
+        dc = (to.c > from.c) ? 1 : -1;
+      } else if (Math.abs(to.r - from.r) > 1) {
+        dr = (to.r > from.r) ? 1 : -1;
+      }
+
+      // Find the rook by checking possible distances (3 for short, 4 for long)
+      const possibleDistances = [3, 4]; // Short and long castling distances
+      let rookFound = false;
+
+      for (const distance of possibleDistances) {
+        const rookRow = from.r + dr * distance;
+        const rookCol = from.c + dc * distance;
+
+        if (inBounds(rookRow, rookCol) && this.board.board[rookRow][rookCol]?.t === 'r') {
+          // Found the rook - move it 3 squares toward the king
+          const newRookRow = to.r - dr;
+          const newRookCol = to.c - dc;
+
+          if (inBounds(newRookRow, newRookCol)) {
+            this.board.board[newRookRow][newRookCol] = { ...this.board.board[rookRow][rookCol], moved: true };
+            this.board.board[rookRow][rookCol] = null;
+            rookFound = true;
+          }
+          break;
+        }
+      }
+
+      if (!rookFound) {
+        console.warn('Castling: Could not find rook to move');
+      }
     } else {
       this.board.movePiece(from, to);
     }
@@ -486,6 +518,15 @@ export default class Game {
 
     // Set up confirm button
     this.elements.confirmGapBtn.onclick = () => this.confirmGapSelection();
+
+    // Set up click outside to close dialog
+    const closeDialogOnOutsideClick = (event) => {
+      if (event.target === this.elements.gapResultDlg) {
+        this.confirmGapSelection();
+        this.elements.gapResultDlg.removeEventListener('click', closeDialogOnOutsideClick);
+      }
+    };
+    this.elements.gapResultDlg.addEventListener('click', closeDialogOnOutsideClick);
   }
 
   confirmGapSelection() {

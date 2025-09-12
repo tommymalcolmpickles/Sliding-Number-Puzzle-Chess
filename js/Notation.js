@@ -125,8 +125,42 @@ export default class Notation {
       return '';
     }
     let move = '';
-    if (p.t === 'k' && Math.abs(this.game.lastMove.to.c - this.game.lastMove.from.c) > 1) {
-      move = this.game.lastMove.to.c > this.game.lastMove.from.c ? STRINGS.NOTATION_CASTLE_KINGSIDE : STRINGS.NOTATION_CASTLE_QUEENSIDE;
+    if (p.t === 'k' && (Math.abs(this.game.lastMove.to.c - this.game.lastMove.from.c) > 1 || Math.abs(this.game.lastMove.to.r - this.game.lastMove.from.r) > 1)) {
+      // Castling - determine if short (4 squares) or long (5 squares) based on distance
+      const from = this.game.lastMove.from;
+      const to = this.game.lastMove.to;
+
+      // Calculate the total span between king and rook
+      let totalSquares = 0;
+      if (Math.abs(to.c - from.c) > 1) {
+        // Horizontal castling
+        const dir = (to.c > from.c) ? 1 : -1;
+        const rookCol = from.c + dir * 3; // Short castling: rook 3 squares away
+        if (this.game.board.pieceAt({ r: from.r, c: rookCol })?.t === 'r') {
+          totalSquares = 4; // King + 2 empty + rook
+        } else {
+          const rookColLong = from.c + dir * 4; // Long castling: rook 4 squares away
+          if (this.game.board.pieceAt({ r: from.r, c: rookColLong })?.t === 'r') {
+            totalSquares = 5; // King + 3 empty + rook
+          }
+        }
+      } else if (Math.abs(to.r - from.r) > 1) {
+        // Vertical castling
+        const dir = (to.r > from.r) ? 1 : -1;
+        const rookRow = from.r + dir * 3; // Short castling: rook 3 squares away
+        if (this.game.board.pieceAt({ r: rookRow, c: from.c })?.t === 'r') {
+          totalSquares = 4; // King + 2 empty + rook
+        } else {
+          const rookRowLong = from.r + dir * 4; // Long castling: rook 4 squares away
+          if (this.game.board.pieceAt({ r: rookRowLong, c: from.c })?.t === 'r') {
+            totalSquares = 5; // King + 3 empty + rook
+          }
+        }
+      }
+
+      // Short castling (4 total squares) = O-O
+      // Long castling (5 total squares) = O-O-O
+      move = (totalSquares === 4) ? STRINGS.NOTATION_CASTLE_KINGSIDE : STRINGS.NOTATION_CASTLE_QUEENSIDE;
     } else {
       // Short notation logic
       let disambiguator = '';

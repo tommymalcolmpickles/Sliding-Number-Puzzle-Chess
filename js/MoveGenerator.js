@@ -72,13 +72,94 @@ export default class MoveGenerator {
           if (inBounds(r, c) && !this.game.board.isGapSquare(r, c)) add(r, c);
         }
         if (!p.moved && !this.isKingInCheck(p.c)) {
-          if (this.canCastle(from, { r: from.r, c: from.c + 2 })) add(from.r, from.c + 2);
-          if (this.canCastle(from, { r: from.r, c: from.c - 2 })) add(from.r, from.c - 2);
+          // Check for castling opportunities in all directions
+          this.addCastlingMoves(from, add);
         }
         break;
       }
     }
     return out.filter(m => this.moveIsLegal(from, m));
+  }
+
+  addCastlingMoves(from, add) {
+    const p = this.game.board.pieceAt(from);
+
+    // Check all directions for castling opportunities
+    this.checkAllCastlingDirections(from, p, add);
+  }
+
+  checkAllCastlingDirections(from, p, add) {
+    // Check all 4 directions for rooks at specific distances
+    const directions = [
+      { dr: 0, dc: 1 },   // East (right)
+      { dr: 0, dc: -1 },  // West (left)
+      { dr: 1, dc: 0 },   // South (down)
+      { dr: -1, dc: 0 }   // North (up)
+    ];
+
+    for (const dir of directions) {
+      // Check for short castling (4 total squares: king + 2 empty + rook)
+      this.checkCastlingAtDistance(from, p, add, dir, 3);
+
+      // Check for long castling (5 total squares: king + 3 empty + rook)
+      this.checkCastlingAtDistance(from, p, add, dir, 4);
+    }
+  }
+
+  checkCastlingAtDistance(from, p, add, direction, distance) {
+    const rookRow = from.r + direction.dr * distance;
+    const rookCol = from.c + direction.dc * distance;
+
+    if (!inBounds(rookRow, rookCol)) {
+      return;
+    }
+
+    const rook = this.game.board.pieceAt({ r: rookRow, c: rookCol });
+    if (!rook || rook.t !== 'r' || rook.c !== p.c || rook.moved) {
+      return;
+    }
+
+    // For distance-based castling, king always moves 2 squares toward rook
+    // Rook always moves 3 squares toward king (jumping over)
+    // Total span = king + 2 empty squares + rook = 4 squares (short) or 5 squares (long)
+    const kingMoveDistance = 2;
+
+    // Check path between king and rook (all squares except king and rook positions)
+    let pathClear = true;
+    let r = from.r + direction.dr;
+    let c = from.c + direction.dc;
+    for (let i = 1; i < distance; i++) {
+      if (this.game.board.isGapSquare(r, c) || this.game.board.pieceAt({ r, c })) {
+        pathClear = false;
+        break;
+      }
+      r += direction.dr;
+      c += direction.dc;
+    }
+
+    if (!pathClear) return;
+
+    // Check that king doesn't pass through check
+    let kingPathSafe = true;
+    for (let step = 1; step <= kingMoveDistance; step++) {
+      const checkR = from.r + direction.dr * step;
+      const checkC = from.c + direction.dc * step;
+      if (this.game.board.isGapSquare(checkR, checkC) ||
+          this.squareAttacked({ r: checkR, c: checkC }, opponent(p.c))) {
+        kingPathSafe = false;
+        break;
+      }
+    }
+
+    if (!kingPathSafe) return;
+
+    // Add the castling move
+    const castleRow = from.r + direction.dr * kingMoveDistance;
+    const castleCol = from.c + direction.dc * kingMoveDistance;
+
+    if (inBounds(castleRow, castleCol) && !this.game.board.isGapSquare(castleRow, castleCol)) {
+      add(castleRow, castleCol);
+    }
   }
 
   canCastle(from, to) {
@@ -104,6 +185,7 @@ export default class MoveGenerator {
     return true;
   }
 
+
   moveIsLegal(from, to) {
     const snap = this.game.board.snapshot();
     const p = this.game.board.pieceAt(from);
@@ -117,6 +199,7 @@ export default class MoveGenerator {
       this.game.enPassantManager.handleCapture(to, p.c);
     }
     if (p.t === 'k' && Math.abs(to.c - from.c) > 1 && from.r === to.r) {
+      // Horizontal castling
       const dir = (to.c > from.c) ? 1 : -1;
       const rookCol = from.c + (dir === 1 ? 3 : -4);
       const newRookCol = to.c - dir;

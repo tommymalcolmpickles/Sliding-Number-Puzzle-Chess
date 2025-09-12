@@ -13,6 +13,8 @@ export default class DialogManager {
     this.illegalSlideDlg = elements.illegalSlideDlg;
     this.illegalSlideReason = elements.illegalSlideReason;
     this.closeIllegalSlide = elements.closeIllegalSlide;
+    this.howToPlayDlg = elements.howToPlayDlg;
+    this.closeHowToPlay = elements.closeHowToPlay;
 
     // Track which specific positions have had draw offers declined at what repetition counts
     this.declinedDraws = new Map(); // positionKey -> declinedRepetitionCount
@@ -32,6 +34,20 @@ export default class DialogManager {
       this.winDlg.style.display = 'none';
       this.game.restore(this.game.initialSnap);
     });
+    if (this.closeHowToPlay) {
+      this.closeHowToPlay.addEventListener('click', () => {
+        this.howToPlayDlg.style.display = 'none';
+        // Clean up event listeners
+        if (this.howToPlayDlg._closeOnOutsideClick) {
+          this.howToPlayDlg.removeEventListener('click', this.howToPlayDlg._closeOnOutsideClick);
+        }
+        if (this.howToPlayDlg._closeOnEscape) {
+          document.removeEventListener('keydown', this.howToPlayDlg._closeOnEscape);
+        }
+      });
+    } else {
+      console.warn('closeHowToPlay element not found in DOM');
+    }
   }
 
   showWinDialog() {
@@ -42,6 +58,80 @@ export default class DialogManager {
   showIllegalSlideDialog(reason) {
     this.illegalSlideReason.textContent = reason;
     this.illegalSlideDlg.style.display = 'flex';
+  }
+
+  initializeTableOfContents() {
+    const tocToggle = this.howToPlayDlg.querySelector('#tocToggle');
+    const tocContent = this.howToPlayDlg.querySelector('#tocContent');
+    const tocIcon = this.howToPlayDlg.querySelector('.toc-icon');
+
+    if (!tocToggle || !tocContent || !tocIcon) return;
+
+    // Remove any existing event listener to avoid duplicates
+    tocToggle.removeEventListener('click', this.handleTocToggle);
+
+    // Create the toggle handler
+    this.handleTocToggle = () => {
+      const isExpanded = tocContent.classList.contains('expanded');
+
+      if (isExpanded) {
+        tocContent.classList.remove('expanded');
+        tocIcon.textContent = '▼';
+      } else {
+        tocContent.classList.add('expanded');
+        tocIcon.textContent = '▲';
+      }
+    };
+
+    // Add the event listener
+    tocToggle.addEventListener('click', this.handleTocToggle);
+  }
+
+  showHowToPlayDialog() {
+    if (this.howToPlayDlg) {
+      this.howToPlayDlg.style.display = 'flex';
+
+      // Scroll to top of content
+      const card = this.howToPlayDlg.querySelector('.card');
+      if (card) {
+        card.scrollTop = 0;
+      }
+
+      // Initialize table of contents toggle
+      this.initializeTableOfContents();
+
+      // Add click outside to close functionality
+      const closeOnOutsideClick = (event) => {
+        if (event.target === this.howToPlayDlg) {
+          this.howToPlayDlg.style.display = 'none';
+          // Clean up event listeners
+          this.howToPlayDlg.removeEventListener('click', closeOnOutsideClick);
+          if (this.howToPlayDlg._closeOnEscape) {
+            document.removeEventListener('keydown', this.howToPlayDlg._closeOnEscape);
+          }
+        }
+      };
+      this.howToPlayDlg.addEventListener('click', closeOnOutsideClick);
+
+      // Add escape key to close functionality
+      const closeOnEscape = (event) => {
+        if (event.key === 'Escape') {
+          this.howToPlayDlg.style.display = 'none';
+          // Clean up event listeners
+          document.removeEventListener('keydown', closeOnEscape);
+          if (this.howToPlayDlg._closeOnOutsideClick) {
+            this.howToPlayDlg.removeEventListener('click', this.howToPlayDlg._closeOnOutsideClick);
+          }
+        }
+      };
+      document.addEventListener('keydown', closeOnEscape);
+
+      // Store the event listeners to remove them when dialog closes
+      this.howToPlayDlg._closeOnOutsideClick = closeOnOutsideClick;
+      this.howToPlayDlg._closeOnEscape = closeOnEscape;
+    } else {
+      console.warn('howToPlayDlg element not found in DOM');
+    }
   }
 
   onClaimDraw() {
