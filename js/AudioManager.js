@@ -144,6 +144,17 @@ export default class AudioManager {
     return this.soundEnabled;
   }
 
+  // Resume audio context (required by browsers for HTTPS sites)
+  async resume() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch (error) {
+        // Failed to resume audio context
+      }
+    }
+  }
+
   // Set tap volume (0.0 to 1.0)
   setTapVolume(volume) {
     this.tapVolume = Math.max(0, Math.min(1, volume));

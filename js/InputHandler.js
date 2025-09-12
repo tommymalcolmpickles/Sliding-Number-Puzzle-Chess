@@ -124,7 +124,9 @@ export default class InputHandler {
     }
   }
 
-  toggleSound() {
+  async toggleSound() {
+    // Resume audio context on user gesture (required for HTTPS sites like GitHub Pages)
+    await this.game.audioManager.resume();
     const isEnabled = this.game.audioManager.toggleSound();
     this.updateSoundToggleButton();
   }
