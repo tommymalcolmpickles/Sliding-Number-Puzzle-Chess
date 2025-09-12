@@ -8,9 +8,12 @@
 </head>
 <body>
   <header class="page-header">
-    <a href="https://xkcd.com/3139/" target="_blank" rel="noopener noreferrer">
+    <div class="title-wrapper">
+      <a href="https://xkcd.com/3139/" target="_blank" rel="noopener noreferrer" class="title-link">
       <h1>Sliding Number Puzzle Chess</h1>
     </a>
+      <button id="howToPlayBtn" class="btn how-to-play-btn">How to Play</button>
+    </div>
   </header>
 
   <div class="app">
@@ -100,9 +103,11 @@
   <!-- Gap result dialog -->
   <div id="gapResultDlg" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:40;">
     <div class="card" style="background:#0f1220; border:1px solid #2a2f45; padding:20px; border-radius:14px; width:min(480px,90vw); text-align:center;">
-      <div id="gapResultPawn" style="font-size:48px; margin:10px 0;"></div>
       <h3 style="margin:10px 0 16px; color:#eef2ff;">Gap Position</h3>
       <p id="gapResultMessage" style="font-size:16px; color:#cbd5e0; margin-bottom:20px;"></p>
+      <div style="width: 64px; height: 64px; background-color: #f0d9b5; border: 1px solid #b58863; border-radius: 4px; margin: 10px auto; display: flex; align-items: center; justify-content: center;">
+        <div id="gapResultPawn" style="font-size:48px; margin:0;" class="black-pawn-glyph">♟</div>
+      </div>
       <div class="row" style="justify-content:center;">
         <button id="confirmGapBtn" class="btn" style="min-width:120px;">Start Game</button>
       </div>
@@ -138,6 +143,399 @@
       <div class="row">
         <button id="closeWin" class="btn">Close</button>
         <button id="resetWin" class="btn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to Play dialog -->
+  <div id="howToPlayDlg" style="display:none;">
+    <div class="dialog-title-bar">
+      <h2>Rules and Gameplay</h2>
+      <button id="closeHowToPlay" class="close-btn">×</button>
+    </div>
+    <div class="card">
+      <div class="rules-content" style="color:#cbd5e0; line-height:1.6;">
+
+        <div class="toc-container">
+          <button class="toc-toggle" id="tocToggle">
+            <span class="toc-icon">▼</span>
+            Table of Contents
+          </button>
+          <div class="toc-content" id="tocContent">
+            <ul class="toc-list">
+              <li>
+                <a href="#rules-section">Rules for Sliding Number Puzzle Chess Variant</a>
+                <ul>
+                  <li><a href="#overview">Overview</a></li>
+                  <li>
+                    <a href="#board-setup">Board Setup</a>
+                    <ul>
+                      <li><a href="#board-structure">Board Structure</a></li>
+                      <li><a href="#the-gap">The Gap</a></li>
+                      <li><a href="#initial-piece-setup">Initial Piece Setup</a></li>
+                      <li><a href="#gap-starting-position">Gap Starting Position</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#gameplay-mechanics">Gameplay Mechanics</a>
+                    <ul>
+                      <li><a href="#turn-structure">Turn Structure</a></li>
+                      <li><a href="#objective">Objective</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#piece-movement">Piece Movement</a>
+                    <ul>
+                      <li><a href="#standard-chess-moves">Standard Chess Moves</a></li>
+                      <li><a href="#pawn-rules">Pawn Rules</a></li>
+                      <li><a href="#castling-rules">Castling</a></li>
+                      <li><a href="#check-and-checkmate">Check and Checkmate</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#sliding-mechanic">Sliding Mechanic</a>
+                    <ul>
+                      <li><a href="#sliding-rules">Sliding Rules</a></li>
+                      <li><a href="#strategic-impact">Strategic Impact</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#castling">Castling</a>
+                    <ul>
+                      <li><a href="#eligibility">Eligibility</a></li>
+                      <li><a href="#execution">Execution</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#endgame-conditions">Endgame Conditions</a>
+                  </li>
+                  <li>
+                    <a href="#notation">Notation</a>
+                    <ul>
+                      <li><a href="#move-notation">Move Notation</a></li>
+                      <li><a href="#slide-notation">Slide Notation</a></li>
+                      <li><a href="#game-record">Game Record</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a href="#game-instructions">Game Instructions</a>
+                <ul>
+                  <li>
+                    <a href="#initial-setup">Initial Setup</a>
+                    <ul>
+                      <li><a href="#starting-the-game">Starting the Game</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#interface-overview">Interface Overview</a>
+                    <ul>
+                      <li><a href="#board-display">Board Display</a></li>
+                      <li><a href="#captured-pieces">Captured Pieces</a></li>
+                      <li><a href="#game-status">Game Status</a></li>
+                      <li><a href="#check-indicator">Check Indicator</a></li>
+                      <li><a href="#notation-log">Notation Log</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#making-a-move">Making a Move</a>
+                    <ul>
+                      <li><a href="#piece-movement-interface">Piece Movement</a></li>
+                      <li><a href="#pawn-double-move">Pawn Double Move</a></li>
+                      <li><a href="#castling-interface">Castling</a></li>
+                      <li><a href="#captures">Captures</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#sliding-a-section">Sliding a Section</a>
+                    <ul>
+                      <li><a href="#selecting-a-slide">Selecting a Slide</a></li>
+                      <li><a href="#strategic-notes">Strategic Notes</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#game-progression">Game Progression</a>
+                    <ul>
+                      <li><a href="#turn-alternation">Turn Alternation</a></li>
+                      <li><a href="#check-and-checkmate-progression">Check and Checkmate</a></li>
+                      <li><a href="#draws">Draws</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#tips-for-players">Tips for Players</a>
+                    <ul>
+                      <li><a href="#strategic-use-of-the-gap">Strategic Use of the Gap</a></li>
+                      <li><a href="#castling-flexibility">Castling Flexibility</a></li>
+                      <li><a href="#pawn-play">Pawn Play</a></li>
+                      <li><a href="#notation-management">Notation Management</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 id="rules-section">Rules for Sliding Number Puzzle Chess Variant</h2>
+
+        <h3 id="overview">Overview</h3>
+        <p>Sliding Number Puzzle Chess is a chess variant that integrates standard chess rules with a sliding tile puzzle mechanic. Played on an 8x8 chessboard divided into 16 2x2 sections, one section is an empty "gap" that affects movement and strategy. Players alternate between making standard chess moves or sliding sections to reposition pieces, aiming for checkmate while navigating the dynamic board. All rules are in reference to white's perspective with white starting at the bottom ranks with theKing starting to the right of the Queen.</p>
+
+        <h3 id="board-setup">Board Setup</h3>
+        <h4 id="board-structure">Board Structure</h4>
+        <ul style="margin:0 0 12px 0;">
+          <li>The game uses an 8x8 chessboard (64 squares), divided into 16 2x2 sections (4 squares each).</li>
+          <li>Sections are numbered 1 to 16, left to right, top to bottom:</li>
+        </ul>
+        <pre><code>1  2  3  4
+5  6  7  8
+9 10 11 12
+13 14 15 16</code></pre>
+        <ul style="margin:8px 0;">
+          <li>Section numbers are only visible through the gap for reference during slides.</li>
+        </ul>
+
+        <h4 id="the-gap">The Gap</h4>
+        <ul style="margin:0;">
+          <li>One 2x2 section is an empty gap, with no pieces or squares present in its four-square area.</li>
+          <li>The gap blocks piece movement, checks, and checkmates, acting as a barrier.</li>
+        </ul>
+
+        <h4 id="initial-piece-setup">Initial Piece Setup</h4>
+        <ul style="margin:0;">
+          <li>Standard chess arrangement: White pieces on ranks 1 and 2, Black pieces on ranks 7 and 8 (e.g., rooks on a1, h1, a8, h8; kings on e1, e8).</li>
+        </ul>
+
+        <h4 id="gap-starting-position">Gap Starting Position</h4>
+        <ul style="margin:0;">
+          <li>At the start, players choose a hand (left or right), each containing a randomly colored pawn (white or black).</li>
+          <li>The chosen pawn's color determines the gap's starting position:</li>
+          <li>White: Section 11 (king-side, center for White: e3, f3, e4, f4).</li>
+          <li>Black: Section 7 (king-side, center for Black: e5, f5, e6, f6).</li>
+        </ul>
+
+        <h3 id="gameplay-mechanics">Gameplay Mechanics</h3>
+        <h4 id="turn-structure">Turn Structure</h4>
+        <ul style="margin:0;">
+          <li>Play begins with White, alternating turns with Black.</li>
+          <li>On a player's turn, they choose one action:</li>
+          <li>1. <strong>Move a Piece</strong>: Follow standard chess rules, adjusted for the gap.</li>
+          <li>2. <strong>Slide a Section</strong>: Move an adjacent 2x2 section into the gap, shifting all pieces in that section.</li>
+        </ul>
+
+        <h4 id="objective">Objective</h4>
+        <ul style="margin:0;">
+          <li>Achieve checkmate by putting the opponent's king in check with no legal escape.</li>
+          <li>Stalemate is possible but difficult due to the sliding mechanic's flexibility.</li>
+        </ul>
+
+        <h3 id="piece-movement">Piece Movement</h3>
+        <h4 id="standard-chess-moves">Standard Chess Moves</h4>
+        <ul style="margin:0;">
+          <li>Pieces move as in standard chess (e.g., bishops diagonally, rooks horizontally/vertically, knights in L-shape).</li>
+          <li>Pieces cannot move through or land on the gap's four-square area.</li>
+        </ul>
+
+        <h4 id="pawn-rules">Pawn Rules</h4>
+        <ul style="margin:0;">
+          <li>Pawns are allowed a double move (two squares forward) on their first standard chess move, even if their position changes due to slides.</li>
+          <li>En passant is possible on any rank if a pawn uses its double move and lands adjacent to an opponent's pawn.</li>
+          <li>Pawns promote as in standard chess upon reaching the opponent's back rank (8 for White, 1 for Black).</li>
+        </ul>
+
+        <h4 id="castling-rules">Castling</h4>
+        <ul style="margin:0;">
+          <li>Castling is permitted as long as King and Rook haven't made a standard chess move yet.</li>
+          <li>Kings and Rooks retain castling rights even through slides.</li>
+          <li>Vertical and reverse castling is allowed.</li>
+        </ul>
+
+        <h4 id="check-and-checkmate">Check and Checkmate</h4>
+        <ul style="margin:0;">
+          <li>A king is in check if threatened by an opponent's piece, ignoring paths blocked by the gap.</li>
+          <li>Checkmate occurs when a king is in check with no legal moves (piece moves or slides) to escape.</li>
+          <li>The gap can block checks, preventing a piece's attack from reaching the king.</li>
+        </ul>
+
+        <h3 id="sliding-mechanic">Sliding Mechanic</h3>
+        <h4 id="sliding-rules">Sliding Rules</h4>
+        <ul style="margin:0;">
+          <li>A player may slide any 2x2 section adjacent to the gap (horizontally or vertically) into the gap's position.</li>
+          <li>The entire section, including any pieces, moves to the gap's former position, and the gap moves to the section's original position.</li>
+          <li>Slides that would place the player's own king in check are illegal.</li>
+          <li>Example: If the gap is in section 11, legal slides are from sections 7, 10, 12, or 15 (if they don't cause check).</li>
+        </ul>
+
+        <h4 id="strategic-impact">Strategic Impact</h4>
+        <ul style="margin:0;">
+          <li>Slides can reposition pieces to create discovered checks, block opponent attacks, or set up checkmates.</li>
+          <li>Slides do not count as standard chess moves for castling eligibility.</li>
+        </ul>
+
+        <h3 id="castling">Castling</h3>
+        <h4 id="eligibility">Eligibility</h4>
+        <ul style="margin:0;">
+          <li>The king and rook must not have made a standard chess move (slides do not count).</li>
+          <li>They must be exactly 4 or 5 squares apart, horizontally or vertically (no diagonal castling, as rooks move only orthogonally).</li>
+          <li>There must be a clear line of sight between king and rook (no pieces or gap in the path).</li>
+          <li>The king cannot be in check, move through a square under attack, or end in check.</li>
+        </ul>
+
+        <h4 id="execution">Execution</h4>
+        <ul style="margin:0;">
+          <li>The king moves two squares toward the rook, and the rook moves to the square on the opposite side of the king.</li>
+          <li>Horizontal castling includes standard setups (e.g., king e1 to g1, rook h1 to f1 for short castling) and mirrored arrangements (e.g., short castling with a rook to the left of the king, like king g1 to e1, rook d1 to f1).</li>
+          <li>Vertical castling is possible (e.g., king e1 to e3, rook e5 to e2, if positions align post-slides).</li>
+        </ul>
+
+        <h3 id="endgame-conditions">Endgame Conditions</h3>
+        <ul style="margin:0;">
+          <li><strong>Checkmate</strong>: The game ends when a player's king is in check with no legal moves (piece moves or slides) to escape.</li>
+          <li><strong>Stalemate</strong>: Occurs if a player has no legal moves but is not in check. Stalemate is likely possible but difficult due to sliding options.</li>
+          <li><strong>Draws</strong>: Possible via standard chess draw conditions (e.g., threefold repetition) or stalemate.</li>
+        </ul>
+
+        <h3 id="notation">Notation</h3>
+        <h4 id="move-notation">Move Notation</h4>
+        <ul style="margin:0;">
+          <li>Uses standard algebraic notation for piece moves (e.g., Nf3, exd5, O-O for castling).</li>
+        </ul>
+
+        <h4 id="slide-notation">Slide Notation</h4>
+        <ul style="margin:0;">
+          <li>Slides are denoted with brackets and an arrow: [section number] followed by ↑, ↓, ←, or →.</li>
+          <li>Example: "[11]↑" means section 11 slides upward into the gap.</li>
+        </ul>
+
+        <h4 id="game-record">Game Record</h4>
+        <ul style="margin:0;">
+          <li>Moves and slides are recorded sequentially (e.g., "1. e4 [11]↑ 1…d5 [7]↓").</li>
+        </ul>
+
+        <h2 id="game-instructions">Game Instructions</h2>
+
+        <h3 id="initial-setup">Initial Setup</h3>
+        <h4 id="starting-the-game">Starting the Game</h4>
+        <ul style="margin:0;">
+          <li>The game loads an 8x8 chessboard with standard piece positions and a 2x2 empty gap in either section 7 (e5-f5, e6-f6) or section 11 (e3-f3, e4-f4).</li>
+          <li>A dialog prompts the first player to choose a hand (left or right), each containing a randomly colored pawn (white or black).</li>
+          <li>The chosen pawn sets the gap's position:</li>
+          <li>White pawn: Gap in section 11.</li>
+          <li>Black pawn: Gap in section 7.</li>
+          <li>White moves first.</li>
+        </ul>
+
+        <h3 id="interface-overview">Interface Overview</h3>
+        <h4 id="board-display">Board Display</h4>
+        <ul style="margin:0;">
+          <li>The 8x8 chessboard shows pieces in standard positions, with the gap as an empty 2x2 section.</li>
+          <li>Section numbers (1-16) are visible only through the gap to assist with slide selection.</li>
+        </ul>
+
+        <h4 id="captured-pieces">Captured Pieces</h4>
+        <ul style="margin:0;">
+          <li>Captured pieces are displayed to the left (Black's captures) and right (White's captures) of the board.</li>
+        </ul>
+
+        <h4 id="game-status">Game Status</h4>
+        <ul style="margin:0;">
+          <li>Text above and below the board shows the current state (e.g., "White to move," "Check. Black to move," "Checkmate, White wins!," "Draw").</li>
+        </ul>
+
+        <h4 id="check-indicator">Check Indicator</h4>
+        <ul style="margin:0;">
+          <li>If a king is in check, its individual square (not the entire section) is highlighted red.</li>
+        </ul>
+
+        <h4 id="notation-log">Notation Log</h4>
+        <ul style="margin:0;">
+          <li>Below the board, a record of moves and slides is shown in algebraic notation (e.g., "1. e4 [11]↑ 1…d5 [7]↓").</li>
+          <li>Players can copy the notation to the clipboard by clicking a "Copy" button or reset the game by clicking a "Reset" button.</li>
+        </ul>
+
+        <h3 id="making-a-move">Making a Move</h3>
+        <h4 id="piece-movement-interface">Piece Movement</h4>
+        <ul style="margin:0;">
+          <li>Click a piece to select it. Legal destination squares are highlighted in blue.</li>
+          <li>Click a blue square to move the piece.</li>
+          <li>If the move is illegal (e.g., blocked by the gap or violates chess rules), no highlights appear.</li>
+        </ul>
+
+        <h4 id="pawn-double-move">Pawn Double Move</h4>
+        <ul style="margin:0;">
+          <li>Pawns can move two squares forward on their first standard chess move, enabling en passant if an opponent's pawn is adjacent post-move.</li>
+        </ul>
+
+        <h4 id="castling-interface">Castling</h4>
+        <ul style="margin:0;">
+          <li>Click the king to see castling options (if eligible). Legal castling destinations (two squares toward the rook, horizontally or vertically) are highlighted blue.</li>
+          <li>Click the blue square to castle; the rook moves to the opposite side.</li>
+          <li>Horizontal castling includes standard (e.g., king e1 to g1, rook h1 to f1) and mirrored setups (e.g., king e1 to c1, rook a1 to d1).</li>
+        </ul>
+
+        <h4 id="captures">Captures</h4>
+        <ul style="margin:0;">
+          <li>Capturing a piece moves it to the opponent's capture display (Black's on left, White's on right).</li>
+        </ul>
+
+        <h3 id="sliding-a-section">Sliding a Section</h3>
+        <h4 id="selecting-a-slide">Selecting a Slide</h4>
+        <ul style="margin:0;">
+          <li>Click the gap's empty 2x2 section. Adjacent sections are highlighted:</li>
+          <li>Blue for legal slides (adjacent sections that don't put the player's king in check).</li>
+          <li>Red for illegal slides (non-adjacent sections or slides causing the player's king to be in check).</li>
+          <li>Click a blue-highlighted section to slide it into the gap.</li>
+          <li>The gap moves to the section's original position, and all pieces in the section shift with it.</li>
+        </ul>
+
+        <h4 id="strategic-notes">Strategic Notes</h4>
+        <ul style="margin:0;">
+          <li>Use slides to reposition pieces, block opponent attacks, or create discovered checks.</li>
+          <li>Example: Sliding a section with a rook may open a check by moving the gap.</li>
+        </ul>
+
+        <h3 id="game-progression">Game Progression</h3>
+        <h4 id="turn-alternation">Turn Alternation</h4>
+        <ul style="margin:0;">
+          <li>After a move or slide, the turn switches to the opponent (e.g., White moves, then Black).</li>
+          <li>The game status updates to reflect whose turn it is.</li>
+        </ul>
+
+        <h4 id="check-and-checkmate-progression">Check and Checkmate</h4>
+        <ul style="margin:0;">
+          <li>If a move or slide puts the opponent's king in check, the king's square turns red, and the status updates (e.g., "Check. Black to move").</li>
+          <li>Checkmate ends the game, with the status displaying "Checkmate, [color] wins!".</li>
+        </ul>
+
+        <h4 id="draws">Draws</h4>
+        <ul style="margin:0;">
+          <li>If a stalemate or draw occurs, the status displays "Draw" or the specific condition (e.g., "Stalemate").</li>
+        </ul>
+
+        <h3 id="tips-for-players">Tips for Players</h3>
+        <h4 id="strategic-use-of-the-gap">Strategic Use of the Gap</h4>
+        <ul style="margin:0;">
+          <li>Position the gap to block opponent checks or restrict their piece movement.</li>
+          <li>Use slides to create unexpected attacks or escape threats.</li>
+        </ul>
+
+        <h4 id="castling-flexibility">Castling Flexibility</h4>
+        <ul style="margin:0;">
+          <li>Plan slides to align the king and rook for horizontal (standard or mirrored) or vertical castling.</li>
+        </ul>
+
+        <h4 id="pawn-play">Pawn Play</h4>
+        <ul style="margin:0;">
+          <li>Use pawn double moves and en passant opportunities to control key squares after slides.</li>
+        </ul>
+
+        <h4 id="notation-management">Notation Management</h4>
+        <ul style="margin:0;">
+          <li>Use the "Copy" button to save the game record for analysis or sharing.</li>
+          <li>Use the "Reset" button to start a new game.</li>
+        </ul>
+
       </div>
     </div>
   </div>
