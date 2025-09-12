@@ -6,6 +6,11 @@ export default class AudioManager {
     this.tapBuffer = null;
     this.slideBuffer = null;
     this.isInitialized = false;
+    this.soundEnabled = true;
+    this.tapGainNode = null;
+    this.slideGainNode = null;
+    this.tapVolume = 0.8; // Louder tap sound
+    this.slideVolume = 0.3; // Softer slide sound
   }
 
   async initialize() {
@@ -35,6 +40,12 @@ export default class AudioManager {
         this.audioContext.decodeAudioData(slideArrayBuffer.slice())
       ]);
 
+      // Create gain nodes for volume control
+      this.tapGainNode = this.audioContext.createGain();
+      this.slideGainNode = this.audioContext.createGain();
+      this.tapGainNode.gain.value = this.tapVolume;
+      this.slideGainNode.gain.value = this.slideVolume;
+
       this.isInitialized = true;
     } catch (error) {
       this.isInitialized = false;
@@ -42,11 +53,13 @@ export default class AudioManager {
   }
 
   async playTap() {
+    if (!this.soundEnabled) return;
+
     if (!this.isInitialized) {
       await this.initialize();
     }
 
-    if (!this.isInitialized || !this.audioContext || !this.tapBuffer) {
+    if (!this.isInitialized || !this.audioContext || !this.tapBuffer || !this.tapGainNode) {
       return;
     }
 
@@ -61,10 +74,11 @@ export default class AudioManager {
 
       setTimeout(() => {
         try {
-          // Create and play the sound
+          // Create and play the sound with volume control
           const source = this.audioContext.createBufferSource();
           source.buffer = this.tapBuffer;
-          source.connect(this.audioContext.destination);
+          source.connect(this.tapGainNode);
+          this.tapGainNode.connect(this.audioContext.destination);
           source.start(0);
         } catch (playError) {
           // Failed to play tap sound
@@ -77,11 +91,13 @@ export default class AudioManager {
   }
 
   async playSlide() {
+    if (!this.soundEnabled) return;
+
     if (!this.isInitialized) {
       await this.initialize();
     }
 
-    if (!this.isInitialized || !this.audioContext || !this.slideBuffer) {
+    if (!this.isInitialized || !this.audioContext || !this.slideBuffer || !this.slideGainNode) {
       return;
     }
 
@@ -96,10 +112,11 @@ export default class AudioManager {
 
       setTimeout(() => {
         try {
-          // Create and play the sound
+          // Create and play the sound with volume control
           const source = this.audioContext.createBufferSource();
           source.buffer = this.slideBuffer;
-          source.connect(this.audioContext.destination);
+          source.connect(this.slideGainNode);
+          this.slideGainNode.connect(this.audioContext.destination);
           source.start(0);
         } catch (playError) {
           // Failed to play slide sound
@@ -109,6 +126,46 @@ export default class AudioManager {
       // Try to reinitialize on next play attempt
       this.isInitialized = false;
     }
+  }
+
+  // Toggle sound on/off
+  toggleSound() {
+    this.soundEnabled = !this.soundEnabled;
+    return this.soundEnabled;
+  }
+
+  // Set sound enabled state
+  setSoundEnabled(enabled) {
+    this.soundEnabled = enabled;
+  }
+
+  // Get sound enabled state
+  getSoundEnabled() {
+    return this.soundEnabled;
+  }
+
+  // Set tap volume (0.0 to 1.0)
+  setTapVolume(volume) {
+    this.tapVolume = Math.max(0, Math.min(1, volume));
+    if (this.tapGainNode) {
+      this.tapGainNode.gain.value = this.tapVolume;
+    }
+  }
+
+  // Set slide volume (0.0 to 1.0)
+  setSlideVolume(volume) {
+    this.slideVolume = Math.max(0, Math.min(1, volume));
+    if (this.slideGainNode) {
+      this.slideGainNode.gain.value = this.slideVolume;
+    }
+  }
+
+  // Get current volumes
+  getVolumes() {
+    return {
+      tap: this.tapVolume,
+      slide: this.slideVolume
+    };
   }
 
 }

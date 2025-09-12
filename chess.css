@@ -98,6 +98,13 @@
     z-index: 10;
   }
 
+  .sound-toggle-btn {
+    font-size: 8px;
+    padding: 4px 6px;
+    min-width: auto;
+    border-radius: 6px;
+  }
+
   /* ===== Phase Display ===== */
   .phase-display-above,
   .phase-display-below {
@@ -903,6 +910,10 @@
     .moves-buttons .btn {
       padding: 4px 8px;
       font-size: 12px;
+    }
+    .moves-buttons .sound-toggle-btn {
+      font-size: 8px;
+      padding: 3px 5px;
     }
     .statusbar {
       flex-direction: column;

@@ -10,6 +10,7 @@ function startGame() {
     capturedWhite: document.getElementById('captured-white'),
     reset: document.getElementById('reset'),
     copyLog: document.getElementById('copyLog'),
+    soundToggle: document.getElementById('soundToggle'),
     movesContainer: document.getElementById('movesContainer'),
     movesTable: document.getElementById('movesTable'),
     movesTableBody: document.getElementById('movesTableBody'),

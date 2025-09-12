@@ -67,6 +67,7 @@ export default class Game {
       boardSvg: elements.boardSvg,
       reset: elements.reset,
       copyLog: elements.copyLog,
+      soundToggle: elements.soundToggle,
     });
     this.initialSnap = this.snapshot();
     this.isLocked = () => {

@@ -7,9 +7,14 @@ export default class InputHandler {
     this.boardElement = elements.boardSvg;
     this.resetBtn = elements.reset;
     this.copyBtn = elements.copyLog;
+    this.soundToggleBtn = elements.soundToggle;
     this.boardElement.addEventListener('click', (evt) => this.onBoardClick(evt));
     this.resetBtn.addEventListener('click', () => this.game.reset());
     this.copyBtn.addEventListener('click', () => this.game.notation.copyLogToClipboard());
+    this.soundToggleBtn.addEventListener('click', () => this.toggleSound());
+
+    // Initialize sound toggle button state
+    this.updateSoundToggleButton();
   }
 
   boardCoords(evt) {
@@ -117,5 +122,16 @@ export default class InputHandler {
         this.game.redraw();
       }
     }
+  }
+
+  toggleSound() {
+    const isEnabled = this.game.audioManager.toggleSound();
+    this.updateSoundToggleButton();
+  }
+
+  updateSoundToggleButton() {
+    const isEnabled = this.game.audioManager.getSoundEnabled();
+    this.soundToggleBtn.textContent = isEnabled ? '🔊 ON' : '🔇 OFF';
+    this.soundToggleBtn.title = isEnabled ? 'Click to turn sound off' : 'Click to turn sound on';
   }
 }
