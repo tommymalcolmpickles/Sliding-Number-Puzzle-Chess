@@ -81,7 +81,7 @@ export default class Game {
   }
 
   start() {
-    this.updateCheckFlags();
+    // Don't check for checkmate at the start - let players make their moves first
     this.notation.renderMoves();
     this.redraw();
 
@@ -93,6 +93,12 @@ export default class Game {
         this.redraw();
       }, 100);
     });
+
+    // Test checkmate detection
+    console.log("=== TESTING CHECKMATE DETECTION ===");
+    console.log(`Current player: ${this.toMove}`);
+    console.log(`hasAnyLegalMove(${this.toMove}): ${this.moveGenerator.hasAnyLegalMove(this.toMove)}`);
+    console.log(`isKingInCheck(${this.toMove}): ${this.moveGenerator.isKingInCheck(this.toMove)}`);
   }
 
   redraw() {
@@ -186,7 +192,6 @@ export default class Game {
   }
 
   finishTurnAfterMove() {
-    this.updateCheckFlags();
     this.repetitionManager.bumpRepetitionCounts();
     this.dialogManager.checkAndShowDrawDialog();
 
@@ -198,6 +203,9 @@ export default class Game {
       this.mode = 'move';
       this.sel = null;
       this.selMoves = [];
+
+      // Check for checkmate/stalemate after switching turns
+      this.updateCheckFlags();
     } else if (this.draw) {
       this.notation.appendResultIfNeeded();
       // Only show stalemate dialog if it's actually a stalemate (no legal moves, king not in check)
@@ -213,15 +221,8 @@ export default class Game {
   }
 
   enterSlidePhase() {
-    this.updateCheckFlags();
-    if (this.winner || this.draw) {
-      if (this.winner && !this.notation.resultAppended) {
-        this.notation.appendResultIfNeeded();
-        // No dialog for checkmate - handled by phase display
-      }
-      this.redraw();
-      return;
-    }
+    // Don't check for checkmate yet - let the player try slide moves first
+    // updateCheckFlags() will be called after the slide phase if needed
     this.mode = STRINGS.MODE_SLIDE;
     this.sel = null;
     this.selMoves = [];
@@ -230,7 +231,6 @@ export default class Game {
   }
 
   finishTurnAfterSlide(slide) {
-    this.updateCheckFlags();
     this.repetitionManager.bumpRepetitionCounts();
     this.notation.appendSlide(slide, slide.originalGap);
     this.dialogManager.checkAndShowDrawDialog();
@@ -245,6 +245,9 @@ export default class Game {
       this.selMoves = [];
       this.lastMove = null; // Clear previous move highlighting for slide moves
       this.lastMoveSlide = slide || null;
+
+      // Check for checkmate/stalemate after switching turns
+      this.updateCheckFlags();
     } else if (this.draw) {
       this.notation.appendResultIfNeeded();
       // Only show stalemate dialog if it's actually a stalemate (no legal moves, king not in check)
@@ -267,14 +270,24 @@ export default class Game {
     const side = this.toMove;
     const opp = opponent(side);
     const inCheck = this.moveGenerator.isKingInCheck(side);
+
+    console.log(`updateCheckFlags: side=${side}, opp=${opp}, inCheck=${inCheck}`);
+    console.log(`hasAnyLegalMove(${side})=${this.moveGenerator.hasAnyLegalMove(side)}`);
+    console.log(`hasAnyLegalMove(${opp})=${this.moveGenerator.hasAnyLegalMove(opp)}`);
+    console.log(`isKingInCheck(${opp})=${this.moveGenerator.isKingInCheck(opp)}`);
+
     if (!this.moveGenerator.hasAnyLegalMove(side)) {
+      console.log(`Player ${side} has no legal moves`);
       if (inCheck) {
+        console.log(`Checkmate! ${opp} wins`);
         this.winner = opp;
       } else {
+        console.log(`Stalemate!`);
         this.winner = null;
         this.draw = true;
       }
     } else if (!this.moveGenerator.hasAnyLegalMove(opp) && this.moveGenerator.isKingInCheck(opp)) {
+      console.log(`Player ${opp} has no legal moves and is in check - ${side} wins`);
       this.winner = side;
     }
   }
@@ -282,6 +295,7 @@ export default class Game {
   tryMakeMove(from, to) {
     const p = this.board.pieceAt(from);
     if (!p || p.c !== this.toMove) return false;
+
     const legal = this.moveGenerator.legalMoves(from);
     if (!legal.some(m => m.r === to.r && m.c === to.c)) return false;
 

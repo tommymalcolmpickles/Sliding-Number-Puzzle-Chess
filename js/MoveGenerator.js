@@ -281,17 +281,34 @@ export default class MoveGenerator {
   }
 
   hasAnyLegalMove(color) {
-    // Check for legal piece moves
+    // For checkmate detection, we need to check if the player has ANY legal moves
+    // in ANY mode, because they can switch modes during their turn
+
+    console.log(`hasAnyLegalMove(${color}): Checking for legal moves...`);
+
+    // Check for legal piece moves (available in move mode)
+    let pieceMovesCount = 0;
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       const p = this.game.board.pieceAt({ r, c });
       if (!p || p.c !== color) continue;
-      if (this.legalMoves({ r, c }).length) return true;
+      const moves = this.legalMoves({ r, c });
+      pieceMovesCount += moves.length;
+      if (moves.length > 0) {
+        console.log(`hasAnyLegalMove(${color}): Found piece moves for ${p.t} at ${r},${c}: ${moves.length} moves`);
+        return true;
+      }
+    }
+    console.log(`hasAnyLegalMove(${color}): No piece moves found (checked ${pieceMovesCount} total moves)`);
+
+    // Check for legal slide moves (available in slide mode)
+    const { legal, illegal } = this.legalSlideTargets();
+    console.log(`hasAnyLegalMove(${color}): Legal slides: ${legal.length}, Illegal slides: ${illegal.length}`);
+    if (legal.length > 0) {
+      console.log(`hasAnyLegalMove(${color}): Found legal slide moves`);
+      return true;
     }
 
-    // Check for legal slide moves
-    const { legal } = this.legalSlideTargets();
-    if (legal.length > 0) return true;
-
+    console.log(`hasAnyLegalMove(${color}): No legal moves found`);
     return false;
   }
 

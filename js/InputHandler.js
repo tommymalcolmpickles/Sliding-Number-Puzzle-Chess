@@ -1,4 +1,4 @@
-import { N, SECTION, squareToSection, secIndex } from './Constants.js';
+import { N, SECTION, squareToSection, secIndex, opponent } from './Constants.js';
 import { STRINGS } from './Strings.js';
 
 export default class InputHandler {
@@ -88,6 +88,7 @@ export default class InputHandler {
       const { legal, illegal } = this.game.moveGenerator.legalSlideTargets();
       console.log('Legal targets:', legal, 'Illegal targets:', illegal);
       console.log('Checking if section', sr, sc, 'is in legal targets...');
+
       if (legal.some(t => t.sr === sr && t.sc === sc)) {
         console.log('Performing legal slide of section', sr, sc);
         this.game.sel = null;
