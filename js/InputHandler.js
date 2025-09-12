@@ -4,17 +4,16 @@ import { STRINGS } from './Strings.js';
 export default class InputHandler {
   constructor(game, elements) {
     this.game = game;
-    this.boardElement = elements.board;
+    this.boardElement = elements.boardSvg;
     this.resetBtn = elements.reset;
     this.copyBtn = elements.copyLog;
     this.boardElement.addEventListener('click', (evt) => this.onBoardClick(evt));
-    this.game.elements.overlay.addEventListener('click', e => e.preventDefault());
     this.resetBtn.addEventListener('click', () => this.game.reset());
     this.copyBtn.addEventListener('click', () => this.game.notation.copyLogToClipboard());
   }
 
   boardCoords(evt) {
-    const rect = evt.target.getBoundingClientRect();
+    const rect = this.boardElement.getBoundingClientRect();
     const x = evt.clientX - rect.left, y = evt.clientY - rect.top;
     const c = Math.floor((x / rect.width) * N);
     const r = Math.floor((y / rect.height) * N);

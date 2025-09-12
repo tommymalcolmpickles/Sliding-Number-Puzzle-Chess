@@ -1,0 +1,13 @@
+warning: in the working copy of 'chess.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'js/Constants.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'js/Game.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'js/InputHandler.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'js/Renderer.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'js/main.js', LF will be replaced by CRLF the next time Git touches it
+chess.css
+index.html
+js/Game.js
+js/InputHandler.js
+js/Renderer.js
+js/main.js

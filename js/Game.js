@@ -29,7 +29,7 @@ export default class Game {
     this.gapSelected = false; // Track if gap position has been chosen
     this.initialGapPosition = null; // Store initial gap position
     this.isSliding = false; // Track if slide animation is in progress
-    this.renderer = new Renderer(elements.canvas, elements.overlay, elements.phaseAbove, elements.phaseBelow, this);
+    this.renderer = new Renderer(elements.boardSvg, elements.phaseAbove, elements.phaseBelow, this);
     this.moveGenerator = new MoveGenerator(this);
     this.notation = new Notation(this, {
       movesText: elements.movesText,
@@ -64,7 +64,7 @@ export default class Game {
     });
     this.audioManager = new AudioManager();
     this.inputHandler = new InputHandler(this, {
-      board: elements.canvas,
+      boardSvg: elements.boardSvg,
       reset: elements.reset,
       copyLog: elements.copyLog,
     });
@@ -80,20 +80,6 @@ export default class Game {
     };
   }
 
-  start() {
-    this.notation.renderMoves();
-    this.redraw();
-
-    // Add window resize listener to handle dynamic scaling
-    window.addEventListener('resize', () => {
-      // Debounce the resize event to avoid excessive redraws
-      clearTimeout(this.resizeTimeout);
-      this.resizeTimeout = setTimeout(() => {
-        this.redraw();
-      }, 100);
-    });
-
-  }
 
   redraw() {
     this.renderer.drawBoard(this);
@@ -458,7 +444,7 @@ export default class Game {
     this.initialGapPosition = { sr: this.board.gap.sr, sc: this.board.gap.sc };
 
     // Disable board interaction
-    this.elements.canvas.parentElement.classList.add(STRINGS.CSS_CLASS_BOARD_MODAL_DISABLED);
+    this.elements.boardSvg.parentElement.classList.add(STRINGS.CSS_CLASS_BOARD_MODAL_DISABLED);
 
     // Show hand selection dialog
     this.elements.handSelectionDlg.style.display = 'flex';
@@ -529,7 +515,7 @@ export default class Game {
     this.elements.gapResultDlg.style.display = 'none';
 
     // Enable board interaction
-    this.elements.canvas.parentElement.classList.remove(STRINGS.CSS_CLASS_BOARD_MODAL_DISABLED);
+    this.elements.boardSvg.parentElement.classList.remove(STRINGS.CSS_CLASS_BOARD_MODAL_DISABLED);
 
     // Mark gap as selected and allow game to start
     this.gapSelected = true;
@@ -546,6 +532,15 @@ export default class Game {
   start() {
     // First, draw the initial board state
     this.redraw();
+
+    // Add window resize listener to handle dynamic scaling
+    window.addEventListener('resize', () => {
+      // Debounce the resize event to avoid excessive redraws
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = setTimeout(() => {
+        this.redraw();
+      }, 100);
+    });
 
     // Then show the hand selection dialog as a modal
     this.showHandSelectionDialog();

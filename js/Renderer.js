@@ -2,10 +2,8 @@ import { SIZE, N, SQ, SECTION, getVar, GLYPH, squareToSection, clone, secIndex, 
 import { STRINGS } from './Strings.js';
 
 export default class Renderer {
-  constructor(canvas, overlay, phaseAbove, phaseBelow, game) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.overlay = overlay;
+  constructor(boardSvg, phaseAbove, phaseBelow, game) {
+    this.boardSvg = boardSvg;
     this.phaseAbove = phaseAbove;
     this.phaseBelow = phaseBelow;
     this.game = game; // Store reference to game instance
@@ -16,13 +14,11 @@ export default class Renderer {
     // Add hover event listeners to gap overlay
     this.setupGapOverlayEvents();
 
-    // Resize canvas to match board-wrap dimensions
-    this.resizeCanvas();
+    // Set initial viewBox
+    this.boardSvg.setAttribute('viewBox', '0 0 800 800');
 
-    // Ensure SVG viewBox is set initially
-    if (!this.overlay.hasAttribute('viewBox')) {
-      this.overlay.setAttribute('viewBox', `0 0 ${this.canvas.width} ${this.canvas.height}`);
-    }
+    // Resize SVG to match board-wrap dimensions
+    this.resizeSvg();
   }
 
   setupGapOverlayEvents() {
@@ -36,15 +32,6 @@ export default class Renderer {
       this.gapOverlay.classList.remove('active');
     });
 
-    this.gapOverlay.addEventListener('click', () => {
-      // Use the stored game reference to toggle mode
-      if (this.game) {
-        this.game.mode = this.game.mode === STRINGS.MODE_MOVE ? STRINGS.MODE_SLIDE : STRINGS.MODE_MOVE;
-        this.game.sel = null;
-        this.game.selMoves = [];
-        this.game.redraw();
-      }
-    });
   }
 
   positionGapOverlay(game, dynamicSectionSize) {
@@ -60,75 +47,138 @@ export default class Renderer {
     this.gapOverlay.style.height = `${dynamicSectionSize}px`;
   }
 
-  resizeCanvas() {
+  resizeSvg() {
     // Get the actual size of the board-wrap element
-    const boardWrap = this.canvas.parentElement;
+    const boardWrap = this.boardSvg.parentElement;
     const rect = boardWrap.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
 
-    // Set canvas size if it has changed
-    if (this.canvas.width !== size || this.canvas.height !== size) {
-      this.canvas.width = size;
-      this.canvas.height = size;
-
-      // Update SVG overlay to match - remove width/height attributes to let CSS handle sizing
-      this.overlay.removeAttribute('width');
-      this.overlay.removeAttribute('height');
-      this.overlay.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    }
+    // Update SVG viewBox to match the new size
+    this.boardSvg.setAttribute('viewBox', `0 0 ${size} ${size}`);
   }
 
   drawBoard(game) {
-    // Resize canvas if needed and clear any existing slide indicators
-    this.resizeCanvas();
-    this.clearSlideIndicators();
+    // Resize SVG if needed and clear any existing elements
+    this.resizeSvg();
+    this.clearBoardElements();
 
-    // Get the actual canvas size
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    // Get the actual SVG size from viewBox
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
-
-    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
+    // Draw board squares
     for (let r = 0; r < N; r++) {
       for (let c = 0; c < N; c++) {
         const { sr, sc } = squareToSection(r, c);
-        if (sr === game.board.gap.sr && sc === game.board.gap.sc) continue;
         const light = ((r + c) % 2 === 0);
-        this.ctx.fillStyle = light ? getVar('--light') : getVar('--dark');
-        this.ctx.fillRect(c * dynamicSQ, r * dynamicSQ, dynamicSQ, dynamicSQ);
+        const isGap = (sr === game.board.gap.sr && sc === game.board.gap.sc);
+
+        const square = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        square.setAttribute('x', (c * dynamicSQ).toString());
+        square.setAttribute('y', (r * dynamicSQ).toString());
+        square.setAttribute('width', dynamicSQ.toString());
+        square.setAttribute('height', dynamicSQ.toString());
+        square.setAttribute('fill', isGap ? getVar('--gap') : (light ? getVar('--light') : getVar('--dark')));
+        square.setAttribute('class', isGap ? 'gap-square' : 'board-square');
+        this.boardSvg.appendChild(square);
       }
     }
-    this.ctx.strokeStyle = getVar('--grid');
-    this.ctx.lineWidth = 2;
+
+    // Draw grid lines
     for (let i = 1; i < 4; i++) {
-      this.ctx.beginPath(); this.ctx.moveTo(i * dynamicSectionSize, 0); this.ctx.lineTo(i * dynamicSectionSize, canvasSize); this.ctx.stroke();
-      this.ctx.beginPath(); this.ctx.moveTo(0, i * dynamicSectionSize); this.ctx.lineTo(canvasSize, i * dynamicSectionSize); this.ctx.stroke();
+      // Vertical lines
+      const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      vLine.setAttribute('x1', (i * dynamicSectionSize).toString());
+      vLine.setAttribute('y1', '0');
+      vLine.setAttribute('x2', (i * dynamicSectionSize).toString());
+      vLine.setAttribute('y2', svgSize.toString());
+      vLine.setAttribute('stroke', getVar('--grid'));
+      vLine.setAttribute('stroke-width', '2');
+      vLine.setAttribute('class', 'grid-line');
+      this.boardSvg.appendChild(vLine);
+
+      // Horizontal lines
+      const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      hLine.setAttribute('x1', '0');
+      hLine.setAttribute('y1', (i * dynamicSectionSize).toString());
+      hLine.setAttribute('x2', svgSize.toString());
+      hLine.setAttribute('y2', (i * dynamicSectionSize).toString());
+      hLine.setAttribute('stroke', getVar('--grid'));
+      hLine.setAttribute('stroke-width', '2');
+      hLine.setAttribute('class', 'grid-line');
+      this.boardSvg.appendChild(hLine);
     }
 
     // Draw rank and file labels
-    this.drawRankAndFileLabels(dynamicSQ);
+    this.drawRankAndFileLabels(dynamicSQ, svgSize);
+
+    this.drawSectionLabels(game);
+    this.drawPieces(game);
+
+    // Draw last move highlight
     if (game.lastMove) {
-      this.ctx.fillStyle = 'rgba(72,187,120,.35)';
       const { from, to } = game.lastMove;
-      this.ctx.fillRect(from.c * dynamicSQ, from.r * dynamicSQ, dynamicSQ, dynamicSQ);
-      this.ctx.fillRect(to.c * dynamicSQ, to.r * dynamicSQ, dynamicSQ, dynamicSQ);
+
+      const fromHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      fromHighlight.setAttribute('x', (from.c * dynamicSQ).toString());
+      fromHighlight.setAttribute('y', (from.r * dynamicSQ).toString());
+      fromHighlight.setAttribute('width', dynamicSQ.toString());
+      fromHighlight.setAttribute('height', dynamicSQ.toString());
+      fromHighlight.setAttribute('fill', 'rgba(72,187,120,.35)');
+      fromHighlight.setAttribute('class', 'last-move-highlight');
+      this.boardSvg.appendChild(fromHighlight);
+
+      const toHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      toHighlight.setAttribute('x', (to.c * dynamicSQ).toString());
+      toHighlight.setAttribute('y', (to.r * dynamicSQ).toString());
+      toHighlight.setAttribute('width', dynamicSQ.toString());
+      toHighlight.setAttribute('height', dynamicSQ.toString());
+      toHighlight.setAttribute('fill', 'rgba(72,187,120,.35)');
+      toHighlight.setAttribute('class', 'last-move-highlight');
+      this.boardSvg.appendChild(toHighlight);
     }
+
+    // Draw check highlight
     if (game.check) {
-      this.ctx.fillStyle = 'rgba(229,62,62,.45)';
       const { r, c } = game.check;
-      this.ctx.fillRect(c * dynamicSQ, r * dynamicSQ, dynamicSQ, dynamicSQ);
+      const checkHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      checkHighlight.setAttribute('x', (c * dynamicSQ).toString());
+      checkHighlight.setAttribute('y', (r * dynamicSQ).toString());
+      checkHighlight.setAttribute('width', dynamicSQ.toString());
+      checkHighlight.setAttribute('height', dynamicSQ.toString());
+      checkHighlight.setAttribute('fill', 'rgba(229,62,62,.45)');
+      checkHighlight.setAttribute('class', 'check-highlight');
+      this.boardSvg.appendChild(checkHighlight);
     }
+
+    // Draw selection highlight
     if (game.sel) {
-      this.ctx.strokeStyle = getVar('--accent');
-      this.ctx.lineWidth = 4;
-      this.ctx.strokeRect(game.sel.c * dynamicSQ + 2, game.sel.r * dynamicSQ + 2, dynamicSQ - 4, dynamicSQ - 4);
-      this.ctx.fillStyle = 'rgba(99,179,237,.35)';
+      const selBorder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      selBorder.setAttribute('x', (game.sel.c * dynamicSQ + 2).toString());
+      selBorder.setAttribute('y', (game.sel.r * dynamicSQ + 2).toString());
+      selBorder.setAttribute('width', (dynamicSQ - 4).toString());
+      selBorder.setAttribute('height', (dynamicSQ - 4).toString());
+      selBorder.setAttribute('fill', 'none');
+      selBorder.setAttribute('stroke', getVar('--accent'));
+      selBorder.setAttribute('stroke-width', '4');
+      selBorder.setAttribute('class', 'selection-highlight');
+      this.boardSvg.appendChild(selBorder);
+
+      // Draw legal move indicators
       for (const m of game.selMoves) {
-        this.ctx.fillRect(m.c * dynamicSQ + 6, m.r * dynamicSQ + 6, dynamicSQ - 12, dynamicSQ - 12);
+        const moveIndicator = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        moveIndicator.setAttribute('x', (m.c * dynamicSQ + 6).toString());
+        moveIndicator.setAttribute('y', (m.r * dynamicSQ + 6).toString());
+        moveIndicator.setAttribute('width', (dynamicSQ - 12).toString());
+        moveIndicator.setAttribute('height', (dynamicSQ - 12).toString());
+        moveIndicator.setAttribute('fill', 'rgba(99,179,237,.35)');
+        moveIndicator.setAttribute('class', 'legal-move-indicator');
+        this.boardSvg.appendChild(moveIndicator);
       }
     }
 
-    // Draw slide indicators first, before clearing overlay for pieces
+    // Draw slide indicators
     if (game.mode === 'slide' && !game.winner && !game.draw && !game.isLocked()) {
       const { legal, illegal } = game.moveGenerator.legalSlideTargets();
       legal.forEach(({ sr, sc }) => {
@@ -143,7 +193,7 @@ export default class Renderer {
         rect.setAttribute('stroke-dasharray', '10 8');
         rect.setAttribute('pointer-events', 'none');
         rect.classList.add('slide-indicator');
-        this.overlay.appendChild(rect);
+        this.boardSvg.appendChild(rect);
         const d_sr = game.board.gap.sr - sr;
         const d_sc = game.board.gap.sc - sc;
         let arrow = '';
@@ -163,7 +213,7 @@ export default class Renderer {
           text.setAttribute('pointer-events', 'none');
           text.classList.add('slide-indicator');
           text.textContent = arrow;
-          this.overlay.appendChild(text);
+          this.boardSvg.appendChild(text);
         }
       });
       illegal.forEach(({ sr, sc }) => {
@@ -178,7 +228,7 @@ export default class Renderer {
         rect.setAttribute('stroke-dasharray', '10 8');
         rect.setAttribute('pointer-events', 'none');
         rect.classList.add('slide-indicator');
-        this.overlay.appendChild(rect);
+        this.boardSvg.appendChild(rect);
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', ((sc + 0.5) * dynamicSectionSize).toString());
         text.setAttribute('y', ((sr + 0.5) * dynamicSectionSize).toString());
@@ -190,31 +240,35 @@ export default class Renderer {
         text.setAttribute('pointer-events', 'none');
         text.classList.add('slide-indicator');
         text.textContent = '✗';
-        this.overlay.appendChild(text);
+        this.boardSvg.appendChild(text);
       });
     }
-
-    this.drawSectionLabels(game);
-    this.drawPieces(game);
 
     // Position the gap overlay
     this.positionGapOverlay(game, dynamicSectionSize);
   }
 
   drawPieces(game) {
-    // Clear elements based on current mode
-    const children = Array.from(this.overlay.children);
+    // Clear non-permanent elements (pieces, highlights, etc.) but keep board squares, grid lines, and labels
+    const children = Array.from(this.boardSvg.children);
     children.forEach(child => {
-      // Keep slide indicators only if we're in slide mode, and always keep section labels
-      if (!(child.classList.contains('slide-indicator') && game.mode === 'slide') &&
-          !child.classList.contains('section-label')) {
-        this.overlay.removeChild(child);
+      // Keep board squares, grid lines, rank/file labels, section labels, slide indicators, selection highlights, and legal move indicators
+      if (!(child.classList.contains('board-square') ||
+            child.classList.contains('grid-line') ||
+            child.classList.contains('rank-label') ||
+            child.classList.contains('file-label') ||
+            child.classList.contains('section-label') ||
+            child.classList.contains('selection-highlight') ||
+            child.classList.contains('legal-move-indicator') ||
+            (child.classList.contains('slide-indicator') && game.mode === 'slide'))) {
+        this.boardSvg.removeChild(child);
       }
     });
 
-    // Get canvas size for dynamic calculations
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    // Get SVG size for dynamic calculations
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
 
     for (let r = 0; r < N; r++) {
       for (let c = 0; c < N; c++) {
@@ -237,15 +291,13 @@ export default class Renderer {
         text.setAttribute('stroke-linecap', 'round');
         text.classList.add(p.c === 'w' ? 'whiteGlyph' : 'blackGlyph');
         text.textContent = GLYPH[p.c][p.t];
-        this.overlay.appendChild(text);
-        if (game.winner && p.t === 'k' && p.c === game.winner) {
-          const flag = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          const x = c * dynamicSQ + dynamicSQ * 0.75;
-          const y = r * dynamicSQ + dynamicSQ * 0.2;
-          flag.setAttribute('d', `M ${x} ${y} l 0 26 l 18 -7 l -18 -7 Z`);
-          flag.setAttribute('fill', '#f6e05e');
-          this.overlay.appendChild(flag);
+
+        // Rotate checkmated king 90 degrees to the left
+        if (game.winner && p.t === 'k' && p.c !== game.winner) {
+          text.setAttribute('transform', `rotate(-90 ${x} ${y})`);
         }
+
+        this.boardSvg.appendChild(text);
       }
     }
   }
@@ -312,18 +364,31 @@ export default class Renderer {
     }
   }
 
+  clearBoardElements() {
+    // Clear all elements except those that are permanent (will be re-drawn)
+    const children = Array.from(this.boardSvg.children);
+    children.forEach(child => {
+      // Keep only the permanent board structure elements
+      if (!(child.classList.contains('grid-line') ||
+            child.classList.contains('rank-label') ||
+            child.classList.contains('file-label'))) {
+        this.boardSvg.removeChild(child);
+      }
+    });
+  }
+
   clearSlideIndicators() {
-    // Remove all slide indicator elements from the overlay
-    const slideIndicators = this.overlay.querySelectorAll('.slide-indicator');
+    // Remove all slide indicator elements from the SVG
+    const slideIndicators = this.boardSvg.querySelectorAll('.slide-indicator');
     slideIndicators.forEach(indicator => {
-      this.overlay.removeChild(indicator);
+      this.boardSvg.removeChild(indicator);
     });
   }
 
   drawSectionLabels(game) {
     // Clear any existing section labels first
-    const existingLabels = this.overlay.querySelectorAll('.section-label');
-    existingLabels.forEach(label => this.overlay.removeChild(label));
+    const existingLabels = this.boardSvg.querySelectorAll('.section-label');
+    existingLabels.forEach(label => this.boardSvg.removeChild(label));
 
     // Draw section number label only for the gap section, centered
     const sr = game.board.gap.sr;
@@ -332,9 +397,10 @@ export default class Renderer {
     const sectionNum = secIndex(sr, sc);
     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 
-    // Get canvas size for dynamic calculations
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    // Get SVG size for dynamic calculations
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
 
     // Center the label within the section
@@ -350,7 +416,7 @@ export default class Renderer {
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('dominant-baseline', 'central');
     label.textContent = sectionNum.toString();
-    this.overlay.appendChild(label);
+    this.boardSvg.appendChild(label);
   }
 
   animateSlide(sr, sc, callback) {
@@ -360,17 +426,18 @@ export default class Renderer {
     // Play slide sound
     this.game.audioManager.playSlide();
 
-    // Get canvas dimensions for dynamic calculations
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    // Get SVG dimensions for dynamic calculations
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
 
     // Calculate movement vector (from section position to gap position)
     const deltaX = (this.game.board.gap.sc - sc) * dynamicSectionSize;
     const deltaY = (this.game.board.gap.sr - sr) * dynamicSectionSize;
 
-    // Clear the original board squares in the sliding section to prevent overlap
-    this.clearSectionOnCanvas(sr, sc);
+    // Hide the original board squares in the sliding section to prevent overlap
+    this.hideSectionSquares(sr, sc);
 
     // Clear any existing slide indicators and old SVG pieces in the section being animated
     this.clearSlideIndicators();
@@ -411,7 +478,7 @@ export default class Renderer {
             endY: squareY + deltaY
           });
 
-          this.overlay.appendChild(animatedSquare);
+          this.boardSvg.appendChild(animatedSquare);
         }
       }
     }
@@ -447,7 +514,7 @@ export default class Renderer {
             endY: pieceY + deltaY
           });
 
-          this.overlay.appendChild(animatedPiece);
+          this.boardSvg.appendChild(animatedPiece);
         }
       }
     }
@@ -481,7 +548,7 @@ export default class Renderer {
         // Remove animated elements
         animatedElements.forEach(({ element }) => {
           if (element.parentNode) {
-            this.overlay.removeChild(element);
+            this.boardSvg.removeChild(element);
           }
         });
 
@@ -509,12 +576,13 @@ export default class Renderer {
 
   drawAnimationSectionLabels(sr, sc) {
     // Clear any existing section labels first
-    const existingLabels = this.overlay.querySelectorAll('.section-label');
-    existingLabels.forEach(label => this.overlay.removeChild(label));
+    const existingLabels = this.boardSvg.querySelectorAll('.section-label');
+    existingLabels.forEach(label => this.boardSvg.removeChild(label));
 
-    // Get canvas dimensions for dynamic calculations
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    // Get SVG dimensions for dynamic calculations
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
 
     // Draw current gap section label (the one being covered)
@@ -535,7 +603,7 @@ export default class Renderer {
     currentLabel.setAttribute('text-anchor', 'middle');
     currentLabel.setAttribute('dominant-baseline', 'central');
     currentLabel.textContent = currentSectionNum.toString();
-    this.overlay.appendChild(currentLabel);
+    this.boardSvg.appendChild(currentLabel);
 
     // Draw target gap section label (the one being revealed)
     const targetGapSr = sr; // The section being moved
@@ -555,30 +623,37 @@ export default class Renderer {
     targetLabel.setAttribute('text-anchor', 'middle');
     targetLabel.setAttribute('dominant-baseline', 'central');
     targetLabel.textContent = targetSectionNum.toString();
-    this.overlay.appendChild(targetLabel);
+    this.boardSvg.appendChild(targetLabel);
   }
 
-  // Clear a specific section on the canvas to prevent overlap during animation
-  clearSectionOnCanvas(sr, sc) {
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
-    const dynamicSectionSize = SECTION * dynamicSQ;
+  // Hide board squares in a specific section to prevent overlap during animation
+  hideSectionSquares(sr, sc) {
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
 
-    // Calculate the section bounds
-    const sectionX = sc * dynamicSectionSize;
-    const sectionY = sr * dynamicSectionSize;
+    // Find and hide all board squares in the section
+    const squares = this.boardSvg.querySelectorAll('.board-square');
+    squares.forEach(square => {
+      const x = parseFloat(square.getAttribute('x'));
+      const y = parseFloat(square.getAttribute('y'));
+      const squareSr = Math.floor(y / (SECTION * dynamicSQ));
+      const squareSc = Math.floor(x / (SECTION * dynamicSQ));
 
-    // Clear the section area on the canvas
-    this.ctx.clearRect(sectionX, sectionY, dynamicSectionSize, dynamicSectionSize);
+      if (squareSr === sr && squareSc === sc) {
+        square.style.display = 'none';
+      }
+    });
   }
 
   // Clear SVG pieces only in the specific section being animated
   clearSectionPieces(sr, sc) {
-    const canvasSize = this.canvas.width;
-    const dynamicSQ = canvasSize / N;
+    const viewBox = this.boardSvg.getAttribute('viewBox').split(' ');
+    const svgSize = parseInt(viewBox[2]);
+    const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
 
-    const children = Array.from(this.overlay.children);
+    const children = Array.from(this.boardSvg.children);
     children.forEach(child => {
       // Only remove pieces that are in the section being animated
       if (child.classList.contains('whiteGlyph') || child.classList.contains('blackGlyph')) {
@@ -590,17 +665,21 @@ export default class Renderer {
 
         // Only remove pieces in the section being animated
         if (pieceSr === sr && pieceSc === sc) {
-          this.overlay.removeChild(child);
+          this.boardSvg.removeChild(child);
         }
       }
       // Also remove checkmate flags and other non-essential elements in the section
       else if (child.tagName === 'path' ||
                (child.tagName === 'rect' &&
                 !child.classList.contains('section-label') &&
-                !child.classList.contains('slide-indicator'))) {
+                !child.classList.contains('slide-indicator') &&
+                !child.classList.contains('board-square') &&
+                !child.classList.contains('grid-line') &&
+                !child.classList.contains('rank-label') &&
+                !child.classList.contains('file-label'))) {
         // For non-piece elements, we can't easily determine their section, so remove them all
         // This is safer than leaving potential conflicts
-        this.overlay.removeChild(child);
+        this.boardSvg.removeChild(child);
       }
     });
   }
@@ -610,12 +689,8 @@ export default class Renderer {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   }
 
-  drawRankAndFileLabels(dynamicSQ) {
-    // Set up text styling
-    this.ctx.fillStyle = getVar('--accent');
-    this.ctx.font = `${Math.max(10, dynamicSQ * 0.18)}px Arial`;
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
+  drawRankAndFileLabels(dynamicSQ, svgSize) {
+    const fontSize = Math.max(10, dynamicSQ * 0.18);
 
     // Draw rank numbers (8-1) on the leftmost column (file a, c=0)
     // Position in top-left corner of each square, moved down a bit
@@ -623,7 +698,18 @@ export default class Renderer {
       const rankNumber = (8 - r).toString();
       const x = 0 * dynamicSQ + dynamicSQ * 0.15; // 15% from left edge
       const y = r * dynamicSQ + dynamicSQ * 0.25; // 25% from top edge (moved down)
-      this.ctx.fillText(rankNumber, x, y);
+
+      const rankLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      rankLabel.setAttribute('x', x.toString());
+      rankLabel.setAttribute('y', y.toString());
+      rankLabel.setAttribute('font-size', `${fontSize}px`);
+      rankLabel.setAttribute('font-family', 'Arial');
+      rankLabel.setAttribute('fill', getVar('--accent'));
+      rankLabel.setAttribute('text-anchor', 'middle');
+      rankLabel.setAttribute('dominant-baseline', 'central');
+      rankLabel.setAttribute('class', 'rank-label');
+      rankLabel.textContent = rankNumber;
+      this.boardSvg.appendChild(rankLabel);
     }
 
     // Draw file letters (a-h) on the bottom rank (rank 1, r=7)
@@ -632,7 +718,18 @@ export default class Renderer {
       const fileLetter = FILES[c];
       const x = c * dynamicSQ + dynamicSQ * 0.85; // 85% from left edge (15% from right)
       const y = 7 * dynamicSQ + dynamicSQ * 0.85; // 85% from top edge (15% from bottom)
-      this.ctx.fillText(fileLetter, x, y);
+
+      const fileLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      fileLabel.setAttribute('x', x.toString());
+      fileLabel.setAttribute('y', y.toString());
+      fileLabel.setAttribute('font-size', `${fontSize}px`);
+      fileLabel.setAttribute('font-family', 'Arial');
+      fileLabel.setAttribute('fill', getVar('--accent'));
+      fileLabel.setAttribute('text-anchor', 'middle');
+      fileLabel.setAttribute('dominant-baseline', 'central');
+      fileLabel.setAttribute('class', 'file-label');
+      fileLabel.textContent = fileLetter;
+      this.boardSvg.appendChild(fileLabel);
     }
   }
 

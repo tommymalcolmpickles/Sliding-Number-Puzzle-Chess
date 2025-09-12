@@ -3,8 +3,7 @@ import { STRINGS } from './Strings.js';
 
 function startGame() {
   const elements = {
-    canvas: document.getElementById('board'),
-    overlay: document.getElementById('overlay'),
+    boardSvg: document.getElementById('board'),
     phaseAbove: document.getElementById('phase-above'),
     phaseBelow: document.getElementById('phase-below'),
     capturedBlack: document.getElementById('captured-black'),
@@ -40,7 +39,7 @@ function startGame() {
     promoHint: document.getElementById('promoBoardHint'),
   };
 
-  if (!elements.canvas || !elements.overlay) {
+  if (!elements.boardSvg) {
     if (elements.phaseAbove) elements.phaseAbove.textContent = STRINGS.ERROR_REQUIRED_DOM_ELEMENTS_MISSING;
     return;
   }
