@@ -196,6 +196,7 @@
                     <a href="#sliding-mechanic">Sliding Mechanic</a>
                     <ul>
                       <li><a href="#sliding-rules">Sliding Rules</a></li>
+                      <li><a href="#multi-slide">Multi-Slide</a></li>
                       <li><a href="#strategic-impact">Strategic Impact</a></li>
                     </ul>
                   </li>
@@ -321,7 +322,7 @@
           <li>Play begins with White, alternating turns with Black.</li>
           <li>On a player's turn, they choose one action:</li>
           <li>1. <strong>Move a Piece</strong>: Follow standard chess rules, adjusted for the gap.</li>
-          <li>2. <strong>Slide a Section</strong>: Move an adjacent 2x2 section into the gap, shifting all pieces in that section.</li>
+          <li>2. <strong>Slide a Section</strong>: Move an adjacent 2x2 section or group of sections into the gap, shifting all pieces in that section.</li>
         </ul>
 
         <h4 id="objective">Objective</h4>
@@ -365,6 +366,11 @@
           <li>The entire section, including any pieces, moves to the gap's former position, and the gap moves to the section's original position.</li>
           <li>Slides that would place the player's own king in check are illegal.</li>
           <li>Example: If the gap is in section 11, legal slides are from sections 7, 10, 12, or 15 (if they don't cause check).</li>
+        </ul>
+
+        <h4 id="multi-slide">Multi-Slide</h4>
+        <ul style="margin:0;">
+          <li>Move a section two or three steps away in the same row/column, shifting all sections between it and the gap one position toward the gap simultaneously. The gap moves to the starting section's position.</li>
         </ul>
 
         <h4 id="strategic-impact">Strategic Impact</h4>
@@ -482,11 +488,11 @@
         <h3 id="sliding-a-section">Sliding a Section</h3>
         <h4 id="selecting-a-slide">Selecting a Slide</h4>
         <ul style="margin:0;">
-          <li>Click the gap's empty 2x2 section. Adjacent sections are highlighted:</li>
-          <li>Blue for legal slides (adjacent sections that don't put the player's king in check).</li>
-          <li>Red for illegal slides (non-adjacent sections or slides causing the player's king to be in check).</li>
-          <li>Click a blue-highlighted section to slide it into the gap.</li>
-          <li>The gap moves to the section's original position, and all pieces in the section shift with it.</li>
+          <li>Click the gap's empty 2x2 section. Valid slide sections are highlighted:</li>
+          <li>Blue for legal slides (slides that don't put the player's king in check).</li>
+          <li>Red for illegal slides (slides causing the player's king to be in check).</li>
+          <li>Click a blue-highlighted section to slide it and any sections between it and the gap into the gap.</li>
+          <li>The gap moves to the section's original position, and all pieces in the section(s) shift with it.</li>
         </ul>
 
         <h4 id="strategic-notes">Strategic Notes</h4>

@@ -100,7 +100,7 @@ Sliding Number Puzzle Chess is a chess variant that integrates standard chess ru
 - Play begins with White, alternating turns with Black.
 - On a player's turn, they choose one action:
 - 1. **Move a Piece**: Follow standard chess rules, adjusted for the gap.
-- 2. **Slide a Section**: Move an adjacent 2x2 section into the gap, shifting all pieces in that section.
+- 2. **Slide a Section**: Move an adjacent 2x2 section or group of sections into the gap, shifting all pieces in that section.
 
 #### Objective
 
@@ -140,6 +140,10 @@ Sliding Number Puzzle Chess is a chess variant that integrates standard chess ru
 - The entire section, including any pieces, moves to the gap's former position, and the gap moves to the section's original position.
 - Slides that would place the player's own king in check are illegal.
 - Example: If the gap is in section 11, legal slides are from sections 7, 10, 12, or 15 (if they don't cause check).
+
+#### Multi-Slide
+- Move a section two or three steps away in the same row/column, shifting all sections between it and the gap one position toward the gap simultaneously. The gap moves to the starting section's position. (Special thanks to u/
+TooLateForMeTF for the idea)
 
 #### Strategic Impact
 
@@ -245,11 +249,11 @@ Sliding Number Puzzle Chess is a chess variant that integrates standard chess ru
 
 #### Selecting a Slide
 
-- Click the gap's empty 2x2 section. Adjacent sections are highlighted:
-- Blue for legal slides (adjacent sections that don't put the player's king in check).
-- Red for illegal slides (non-adjacent sections or slides causing the player's king to be in check).
-- Click a blue-highlighted section to slide it into the gap.
-- The gap moves to the section's original position, and all pieces in the section shift with it.
+- Click the gap's empty 2x2 section. Valid slide sections are highlighted:
+- Blue for legal slides (slides that don't put the player's king in check).
+- Red for illegal slides (slides causing the player's king to be in check).
+- Click a blue-highlighted section to slide it and any sections between it and the gap into the gap.
+- The gap moves to the section's original position, and all pieces in the section(s) shift with it.
 
 #### Strategic Notes
 
