@@ -93,12 +93,19 @@ export default class InputHandler {
         // Capture original gap position before slide
         const originalGap = { sr: this.game.board.gap.sr, sc: this.game.board.gap.sc };
 
-        // Start slide animation
-        this.game.renderer.animateSlide(sr, sc, () => {
+        // Get the slide chain for this origin
+        const slideChain = this.game.moveGenerator.determineSlideChain(sr, sc);
+
+        // Start multi-slide animation
+        this.game.renderer.animateMultiSlide(slideChain, () => {
           // Animation completed, now update board state
-          this.game.board.slideSection(sr, sc);
-          // Update enPassantTarget position after slide
-          this.game.enPassantManager.updateAfterSlide(sr, sc);
+          this.game.board.multiSlideSection(slideChain);
+
+          // Update enPassantTarget position after slide for all sections in the chain
+          slideChain.forEach(move => {
+            this.game.enPassantManager.updateAfterSlide(move.fromSr, move.fromSc);
+          });
+
           this.game.promotionManager.handleSlidePromotions(() => {
             if (this.game.moveGenerator.isKingInCheck(this.game.toMove)) {
               // Invalid slide promotion - undo the slide
@@ -107,7 +114,8 @@ export default class InputHandler {
               this.game.redraw();
               return;
             }
-            this.game.finishTurnAfterSlide({ sr, sc, originalGap });
+            // Pass the origin of the slide chain for turn completion
+            this.game.finishTurnAfterSlide({ sr, sc, originalGap, slideChain });
           });
         });
       } else if (illegal.some(t => t.sr === sr && t.sc === sc)) {
@@ -115,11 +123,22 @@ export default class InputHandler {
         const reason = `Sliding section ${sectionNum} would put your king in check.`;
         this.game.dialogManager.showIllegalSlideDialog(reason);
       } else {
-        // Clicked on a section that's not adjacent to the gap - switch back to move mode
-        this.game.mode = STRINGS.MODE_MOVE;
-        this.game.sel = null;
-        this.game.selMoves = [];
-        this.game.redraw();
+        // Check if this is a valid origin from our new multi-slide system
+        const validOrigins = this.game.moveGenerator.findValidSlideOrigins();
+        const isValidOrigin = validOrigins.some(origin => origin.sr === sr && origin.sc === sc);
+
+        if (isValidOrigin) {
+          // This is a valid multi-slide origin but it's not in the legal list (must be illegal)
+          const sectionNum = secIndex(sr, sc);
+          const reason = `Sliding section ${sectionNum} would put your king in check.`;
+          this.game.dialogManager.showIllegalSlideDialog(reason);
+        } else {
+          // Clicked on a section that's not a valid slide origin - switch back to move mode
+          this.game.mode = STRINGS.MODE_MOVE;
+          this.game.sel = null;
+          this.game.selMoves = [];
+          this.game.redraw();
+        }
       }
     }
   }
@@ -137,3 +156,5 @@ export default class InputHandler {
     this.soundToggleBtn.title = isEnabled ? 'Click to turn sound off' : 'Click to turn sound on';
   }
 }
+
+

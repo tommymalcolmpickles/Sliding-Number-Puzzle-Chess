@@ -281,24 +281,91 @@ export default class MoveGenerator {
     return false;
   }
 
+  findValidSlideOrigins() {
+    const origins = [];
+    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    for (const [dsr, dsc] of directions) {
+      // Check up to 3 sections away in this direction
+      for (let distance = 1; distance <= 3; distance++) {
+        const sr = this.game.board.gap.sr + dsr * distance;
+        const sc = this.game.board.gap.sc + dsc * distance;
+
+        // Check bounds
+        if (sr >= 0 && sr < 4 && sc >= 0 && sc < 4 && this.game.board.sectionIdAt[sr][sc] !== 0) {
+          origins.push({ sr, sc, distance });
+        } else {
+          // Stop checking further in this direction if we hit a boundary or gap
+          break;
+        }
+      }
+    }
+
+    return origins;
+  }
+
+  determineSlideChain(originSr, originSc) {
+    const gapSr = this.game.board.gap.sr;
+    const gapSc = this.game.board.gap.sc;
+
+    // Determine direction from origin to gap
+    const dsr = gapSr - originSr;
+    const dsc = gapSc - originSc;
+
+    // Normalize to get step direction (should be -1, 0, or 1)
+    const stepSr = dsr === 0 ? 0 : dsr > 0 ? 1 : -1;
+    const stepSc = dsc === 0 ? 0 : dsc > 0 ? 1 : -1;
+
+    // Calculate distance
+    const distance = Math.max(Math.abs(dsr), Math.abs(dsc));
+
+    const chain = [];
+
+    // Build the chain of sections to move
+    for (let i = 0; i < distance; i++) {
+      const currentSr = originSr + stepSr * i;
+      const currentSc = originSc + stepSc * i;
+
+      const targetSr = currentSr + stepSr;
+      const targetSc = currentSc + stepSc;
+
+      chain.push({
+        fromSr: currentSr,
+        fromSc: currentSc,
+        toSr: targetSr,
+        toSc: targetSc
+      });
+    }
+
+    return chain;
+  }
+
   legalSlideTargets() {
     const legal = [];
     const illegal = [];
-    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    for (const [dsr, dsc] of directions) {
-      const sr = this.game.board.gap.sr + dsr;
-      const sc = this.game.board.gap.sc + dsc;
-      if (sr >= 0 && sr < 4 && sc >= 0 && sc < 4 && this.game.board.sectionIdAt[sr][sc] !== 0) {
-        const snap = this.game.board.snapshot();
-        this.game.board.slideSection(sr, sc, true);
-        if (this.isKingInCheck(this.game.toMove)) {
-          illegal.push({ sr, sc });
-        } else {
-          legal.push({ sr, sc });
-        }
-        this.game.board.restore(snap, true);
+
+    // Get all valid origins
+    const origins = this.findValidSlideOrigins();
+
+    for (const origin of origins) {
+      const { sr, sc } = origin;
+
+      // Get the slide chain for this origin
+      const slideChain = this.determineSlideChain(sr, sc);
+
+      // Simulate the entire multi-section slide
+      const snap = this.game.board.snapshot();
+      this.game.board.multiSlideSection(slideChain, true);
+
+      if (this.isKingInCheck(this.game.toMove)) {
+        illegal.push({ sr, sc });
+      } else {
+        legal.push({ sr, sc });
       }
+
+      this.game.board.restore(snap, true);
     }
+
     return { legal, illegal };
   }
 }

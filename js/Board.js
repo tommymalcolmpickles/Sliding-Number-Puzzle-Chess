@@ -68,6 +68,69 @@ export default class Board {
     this.gap = { sr, sc };
   }
 
+  multiSlideSection(slideChain, dry = false) {
+    // Create a temporary board to store the new state
+    const tempBoard = Array.from({ length: 8 }, () => Array(8).fill(null));
+    const tempSectionIdAt = Array.from({ length: 4 }, () => Array(4).fill(0));
+
+    // First, copy all sections that are not moving
+    for (let sr = 0; sr < 4; sr++) {
+      for (let sc = 0; sc < 4; sc++) {
+        if (this.sectionIdAt[sr][sc] !== 0) {
+          // Check if this section is part of the slide chain
+          const isMoving = slideChain.some(move =>
+            move.fromSr === sr && move.fromSc === sc
+          );
+
+          if (!isMoving) {
+            // Copy the entire section as-is
+            const r0 = sr * SECTION, c0 = sc * SECTION;
+            for (let r = 0; r < SECTION; r++) {
+              for (let c = 0; c < SECTION; c++) {
+                tempBoard[r0 + r][c0 + c] = this.board[r0 + r][c0 + c];
+              }
+            }
+            tempSectionIdAt[sr][sc] = this.sectionIdAt[sr][sc];
+          }
+        }
+      }
+    }
+
+    // Now move the sections in the chain
+    for (const move of slideChain) {
+      const { fromSr, fromSc, toSr, toSc } = move;
+
+      // Move the section content
+      const fromR0 = fromSr * SECTION, fromC0 = fromSc * SECTION;
+      const toR0 = toSr * SECTION, toC0 = toSc * SECTION;
+
+      for (let r = 0; r < SECTION; r++) {
+        for (let c = 0; c < SECTION; c++) {
+          tempBoard[toR0 + r][toC0 + c] = this.board[fromR0 + r][fromC0 + c];
+        }
+      }
+
+      // Move the section ID
+      tempSectionIdAt[toSr][toSc] = this.sectionIdAt[fromSr][fromSc];
+    }
+
+    // Handle the gap - it should move to the position of the first section in the chain
+    const firstMove = slideChain[0];
+    tempSectionIdAt[firstMove.fromSr][firstMove.fromSc] = 0;
+
+    // Apply the changes to the actual board
+    if (!dry) {
+      this.board = tempBoard;
+      this.sectionIdAt = tempSectionIdAt;
+      this.gap = { sr: firstMove.fromSr, sc: firstMove.fromSc };
+    } else {
+      // For dry run, just update the board temporarily
+      this.board = tempBoard;
+      this.sectionIdAt = tempSectionIdAt;
+      this.gap = { sr: firstMove.fromSr, sc: firstMove.fromSc };
+    }
+  }
+
   findBackRankPromos() {
     const promos = [];
     for (let c = 0; c < N; c++) {

@@ -181,65 +181,60 @@ export default class Renderer {
     // Draw slide indicators
     if (game.mode === 'slide' && !game.winner && !game.draw && !game.isLocked()) {
       const { legal, illegal } = game.moveGenerator.legalSlideTargets();
-      legal.forEach(({ sr, sc }) => {
+
+      // Get all valid origins (including those up to 3 steps away)
+      const allValidOrigins = game.moveGenerator.findValidSlideOrigins();
+
+      // Create a map for quick lookup of legal/illegal status
+      const originStatus = new Map();
+      legal.forEach(({ sr, sc }) => originStatus.set(`${sr},${sc}`, 'legal'));
+      illegal.forEach(({ sr, sc }) => originStatus.set(`${sr},${sc}`, 'illegal'));
+
+      // Draw indicators for all valid origins
+      allValidOrigins.forEach(({ sr, sc }) => {
+        const status = originStatus.get(`${sr},${sc}`) || 'illegal'; // Default to illegal if not found
+        const isLegal = status === 'legal';
+
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         rect.setAttribute('x', (sc * dynamicSectionSize + 6).toString());
         rect.setAttribute('y', (sr * dynamicSectionSize + 6).toString());
         rect.setAttribute('width', (dynamicSectionSize - 12).toString());
         rect.setAttribute('height', (dynamicSectionSize - 12).toString());
         rect.setAttribute('fill', 'none');
-        rect.setAttribute('stroke', getVar('--accent'));
+        rect.setAttribute('stroke', isLegal ? getVar('--accent') : getVar('--danger'));
         rect.setAttribute('stroke-width', '4');
         rect.setAttribute('stroke-dasharray', '10 8');
         rect.setAttribute('pointer-events', 'none');
         rect.classList.add('slide-indicator');
         this.boardSvg.appendChild(rect);
-        const d_sr = game.board.gap.sr - sr;
-        const d_sc = game.board.gap.sc - sc;
-        let arrow = '';
-        if (d_sr > 0) arrow = '↓';
-        else if (d_sr < 0) arrow = '↑';
-        else if (d_sc > 0) arrow = '→';
-        else if (d_sc < 0) arrow = '←';
-        if (arrow) {
-          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', ((sc + 0.5) * dynamicSectionSize).toString());
-          text.setAttribute('y', ((sr + 0.5) * dynamicSectionSize).toString());
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('dominant-baseline', 'central');
-          text.setAttribute('font-size', (dynamicSQ * 1.2).toString());
-          text.setAttribute('fill', getVar('--accent'));
-          text.setAttribute('opacity', '0.5');
-          text.setAttribute('pointer-events', 'none');
-          text.classList.add('slide-indicator');
-          text.textContent = arrow;
-          this.boardSvg.appendChild(text);
-        }
-      });
-      illegal.forEach(({ sr, sc }) => {
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', (sc * dynamicSectionSize + 6).toString());
-        rect.setAttribute('y', (sr * dynamicSectionSize + 6).toString());
-        rect.setAttribute('width', (dynamicSectionSize - 12).toString());
-        rect.setAttribute('height', (dynamicSectionSize - 12).toString());
-        rect.setAttribute('fill', 'none');
-        rect.setAttribute('stroke', getVar('--danger'));
-        rect.setAttribute('stroke-width', '4');
-        rect.setAttribute('stroke-dasharray', '10 8');
-        rect.setAttribute('pointer-events', 'none');
-        rect.classList.add('slide-indicator');
-        this.boardSvg.appendChild(rect);
+
+        // Add arrow or X symbol
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', ((sc + 0.5) * dynamicSectionSize).toString());
         text.setAttribute('y', ((sr + 0.5) * dynamicSectionSize).toString());
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'central');
         text.setAttribute('font-size', (dynamicSQ * 1.2).toString());
-        text.setAttribute('fill', getVar('--danger'));
+        text.setAttribute('fill', isLegal ? getVar('--accent') : getVar('--danger'));
         text.setAttribute('opacity', '0.5');
         text.setAttribute('pointer-events', 'none');
         text.classList.add('slide-indicator');
-        text.textContent = '✗';
+
+        if (isLegal) {
+          // Show arrow indicating direction toward gap
+          const d_sr = game.board.gap.sr - sr;
+          const d_sc = game.board.gap.sc - sc;
+          let arrow = '';
+          if (d_sr > 0) arrow = '↓';
+          else if (d_sr < 0) arrow = '↑';
+          else if (d_sc > 0) arrow = '→';
+          else if (d_sc < 0) arrow = '←';
+          text.textContent = arrow;
+        } else {
+          // Show X for illegal moves
+          text.textContent = '✗';
+        }
+
         this.boardSvg.appendChild(text);
       });
     }
@@ -420,6 +415,12 @@ export default class Renderer {
   }
 
   animateSlide(sr, sc, callback) {
+    // For single section slides, use the original logic but delegate to multi-slide
+    const slideChain = this.game.moveGenerator.determineSlideChain(sr, sc);
+    this.animateMultiSlide(slideChain, callback);
+  }
+
+  animateMultiSlide(slideChain, callback) {
     // Set sliding state
     this.game.isSliding = true;
 
@@ -432,92 +433,106 @@ export default class Renderer {
     const dynamicSQ = svgSize / N;
     const dynamicSectionSize = SECTION * dynamicSQ;
 
-    // Calculate movement vector (from section position to gap position)
-    const deltaX = (this.game.board.gap.sc - sc) * dynamicSectionSize;
-    const deltaY = (this.game.board.gap.sr - sr) * dynamicSectionSize;
+    // Hide the original board squares in all sliding sections to prevent overlap
+    const sectionsToHide = new Set();
+    slideChain.forEach(move => {
+      sectionsToHide.add(`${move.fromSr},${move.fromSc}`);
+    });
+    sectionsToHide.forEach(sectionKey => {
+      const [sr, sc] = sectionKey.split(',').map(Number);
+      this.hideSectionSquares(sr, sc);
+    });
 
-    // Hide the original board squares in the sliding section to prevent overlap
-    this.hideSectionSquares(sr, sc);
-
-    // Clear any existing slide indicators and old SVG pieces in the section being animated
+    // Clear any existing slide indicators and old SVG pieces in the sections being animated
     this.clearSlideIndicators();
-    this.clearSectionPieces(sr, sc);
+    slideChain.forEach(move => {
+      this.clearSectionPieces(move.fromSr, move.fromSc);
+    });
 
-    // Draw both current and target section labels for animation
-    this.drawAnimationSectionLabels(sr, sc);
+    // Draw animation section labels for all moving sections
+    this.drawAnimationSectionLabelsForChain(slideChain);
 
-    // Create animated elements for board squares and pieces in the section
+    // Create animated elements for all sections in the chain
     const animatedElements = [];
 
-    // First, create animated squares for the entire section
-    for (let r = sr * SECTION; r < (sr + 1) * SECTION; r++) {
-      for (let c = sc * SECTION; c < (sc + 1) * SECTION; c++) {
-        // Calculate square position on screen
-        const squareX = c * dynamicSQ;
-        const squareY = r * dynamicSQ;
+    // Process each section in the chain
+    slideChain.forEach(move => {
+      const { fromSr, fromSc, toSr, toSc } = move;
 
-        // Create animated square element (only for non-gap squares)
-        const { sr: squareSr, sc: squareSc } = squareToSection(r, c);
-        if (!(squareSr === this.game.board.gap.sr && squareSc === this.game.board.gap.sc)) {
-          const light = ((r + c) % 2 === 0);
-          const animatedSquare = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          animatedSquare.setAttribute('x', squareX.toString());
-          animatedSquare.setAttribute('y', squareY.toString());
-          animatedSquare.setAttribute('width', dynamicSQ.toString());
-          animatedSquare.setAttribute('height', dynamicSQ.toString());
-          animatedSquare.setAttribute('fill', light ? getVar('--light') : getVar('--dark'));
-          animatedSquare.setAttribute('stroke', getVar('--grid'));
-          animatedSquare.setAttribute('stroke-width', '1');
-          animatedSquare.setAttribute('pointer-events', 'none');
+      // Calculate movement vector for this section
+      const deltaX = (toSc - fromSc) * dynamicSectionSize;
+      const deltaY = (toSr - fromSr) * dynamicSectionSize;
 
-          animatedElements.push({
-            element: animatedSquare,
-            startX: squareX,
-            startY: squareY,
-            endX: squareX + deltaX,
-            endY: squareY + deltaY
-          });
+      // Create animated squares for the entire section
+      for (let r = fromSr * SECTION; r < (fromSr + 1) * SECTION; r++) {
+        for (let c = fromSc * SECTION; c < (fromSc + 1) * SECTION; c++) {
+          // Calculate square position on screen
+          const squareX = c * dynamicSQ;
+          const squareY = r * dynamicSQ;
 
-          this.boardSvg.appendChild(animatedSquare);
+          // Create animated square element (only for non-gap squares)
+          const { sr: squareSr, sc: squareSc } = squareToSection(r, c);
+          if (!(squareSr === this.game.board.gap.sr && squareSc === this.game.board.gap.sc)) {
+            const light = ((r + c) % 2 === 0);
+            const animatedSquare = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            animatedSquare.setAttribute('x', squareX.toString());
+            animatedSquare.setAttribute('y', squareY.toString());
+            animatedSquare.setAttribute('width', dynamicSQ.toString());
+            animatedSquare.setAttribute('height', dynamicSQ.toString());
+            animatedSquare.setAttribute('fill', light ? getVar('--light') : getVar('--dark'));
+            animatedSquare.setAttribute('stroke', getVar('--grid'));
+            animatedSquare.setAttribute('stroke-width', '1');
+            animatedSquare.setAttribute('pointer-events', 'none');
+
+            animatedElements.push({
+              element: animatedSquare,
+              startX: squareX,
+              startY: squareY,
+              endX: squareX + deltaX,
+              endY: squareY + deltaY
+            });
+
+            this.boardSvg.appendChild(animatedSquare);
+          }
         }
       }
-    }
 
-    // Then, create animated pieces for the section
-    for (let r = sr * SECTION; r < (sr + 1) * SECTION; r++) {
-      for (let c = sc * SECTION; c < (sc + 1) * SECTION; c++) {
-        const piece = this.game.board.pieceAt({ r, c });
-        if (piece) {
-          // Calculate piece position on screen
-          const pieceX = c * dynamicSQ + dynamicSQ / 2;
-          const pieceY = r * dynamicSQ + dynamicSQ / 2;
+      // Create animated pieces for the section
+      for (let r = fromSr * SECTION; r < (fromSr + 1) * SECTION; r++) {
+        for (let c = fromSc * SECTION; c < (fromSc + 1) * SECTION; c++) {
+          const piece = this.game.board.pieceAt({ r, c });
+          if (piece) {
+            // Calculate piece position on screen
+            const pieceX = c * dynamicSQ + dynamicSQ / 2;
+            const pieceY = r * dynamicSQ + dynamicSQ / 2;
 
-          // Create animated piece element
-          const animatedPiece = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          animatedPiece.setAttribute('x', pieceX.toString());
-          animatedPiece.setAttribute('y', pieceY.toString());
-          animatedPiece.setAttribute('text-anchor', 'middle');
-          animatedPiece.setAttribute('dominant-baseline', 'central');
-          animatedPiece.setAttribute('font-size', String(dynamicSQ * 0.78));
-          animatedPiece.setAttribute('pointer-events', 'none');
-          animatedPiece.setAttribute('stroke', 'black');
-          animatedPiece.setAttribute('stroke-width', '.3');
-          animatedPiece.setAttribute('stroke-linecap', 'round');
-          animatedPiece.setAttribute('class', piece.c === 'w' ? 'whiteGlyph' : 'blackGlyph');
-          animatedPiece.textContent = GLYPH[piece.c][piece.t];
+            // Create animated piece element
+            const animatedPiece = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            animatedPiece.setAttribute('x', pieceX.toString());
+            animatedPiece.setAttribute('y', pieceY.toString());
+            animatedPiece.setAttribute('text-anchor', 'middle');
+            animatedPiece.setAttribute('dominant-baseline', 'central');
+            animatedPiece.setAttribute('font-size', String(dynamicSQ * 0.78));
+            animatedPiece.setAttribute('pointer-events', 'none');
+            animatedPiece.setAttribute('stroke', 'black');
+            animatedPiece.setAttribute('stroke-width', '.3');
+            animatedPiece.setAttribute('stroke-linecap', 'round');
+            animatedPiece.setAttribute('class', piece.c === 'w' ? 'whiteGlyph' : 'blackGlyph');
+            animatedPiece.textContent = GLYPH[piece.c][piece.t];
 
-          animatedElements.push({
-            element: animatedPiece,
-            startX: pieceX,
-            startY: pieceY,
-            endX: pieceX + deltaX,
-            endY: pieceY + deltaY
-          });
+            animatedElements.push({
+              element: animatedPiece,
+              startX: pieceX,
+              startY: pieceY,
+              endX: pieceX + deltaX,
+              endY: pieceY + deltaY
+            });
 
-          this.boardSvg.appendChild(animatedPiece);
+            this.boardSvg.appendChild(animatedPiece);
+          }
         }
       }
-    }
+    });
 
     // Start animation
     const startTime = Date.now();
@@ -529,7 +544,7 @@ export default class Renderer {
       // Use easing function for smooth animation
       const easedProgress = this.easeInOutQuad(progress);
 
-      // Update position of each animated piece
+      // Update position of each animated element
       animatedElements.forEach(({ element, startX, startY, endX, endY }) => {
         const currentX = startX + (endX - startX) * easedProgress;
         const currentY = startY + (endY - startY) * easedProgress;
@@ -574,7 +589,7 @@ export default class Renderer {
     }
   }
 
-  drawAnimationSectionLabels(sr, sc) {
+  drawAnimationSectionLabelsForChain(slideChain) {
     // Clear any existing section labels first
     const existingLabels = this.boardSvg.querySelectorAll('.section-label');
     existingLabels.forEach(label => this.boardSvg.removeChild(label));
@@ -605,9 +620,10 @@ export default class Renderer {
     currentLabel.textContent = currentSectionNum.toString();
     this.boardSvg.appendChild(currentLabel);
 
-    // Draw target gap section label (the one being revealed)
-    const targetGapSr = sr; // The section being moved
-    const targetGapSc = sc; // The section being moved
+    // Draw target gap section label (the position of the first section in the chain)
+    const firstMove = slideChain[0];
+    const targetGapSr = firstMove.fromSr;
+    const targetGapSc = firstMove.fromSc;
     const targetSectionNum = secIndex(targetGapSr, targetGapSc);
     const targetLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 
@@ -624,6 +640,12 @@ export default class Renderer {
     targetLabel.setAttribute('dominant-baseline', 'central');
     targetLabel.textContent = targetSectionNum.toString();
     this.boardSvg.appendChild(targetLabel);
+  }
+
+  drawAnimationSectionLabels(sr, sc) {
+    // For backward compatibility, create a single-move chain and delegate
+    const slideChain = [{ fromSr: sr, fromSc: sc, toSr: this.game.board.gap.sr, toSc: this.game.board.gap.sc }];
+    this.drawAnimationSectionLabelsForChain(slideChain);
   }
 
   // Hide board squares in a specific section to prevent overlap during animation
